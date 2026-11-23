@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     WHISPER_MODEL: str = "base"
     WHISPER_DEVICE: str = "cpu"
     WHISPER_COMPUTE_TYPE: str = "int8"
+    WHISPER_LANGUAGE: Optional[str] = None
+    WHISPER_NO_SPEECH_THRESHOLD: float = 0.85
+    WHISPER_LOG_PROB_THRESHOLD: float = -2.5
+    WHISPER_CONDITION_ON_PREVIOUS_TEXT: bool = False
+    WHISPER_BEAM_SIZE: int = 5
     
     # LLM Settings (Zero-Cost Local Ollama)
     LLM_PROVIDER: str = "ollama"

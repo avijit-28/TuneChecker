@@ -24,12 +24,29 @@ class FasterWhisperProvider(BaseSttProvider):
     def transcribe(self, audio_path: Path) -> SttResult:
         try:
             model = self.get_model()
+            lang_param = settings.WHISPER_LANGUAGE
             segments_gen, info = model.transcribe(
                 str(audio_path),
-                beam_size=5,
-                language="en",
+                beam_size=settings.WHISPER_BEAM_SIZE,
+                language=lang_param,
+                condition_on_previous_text=settings.WHISPER_CONDITION_ON_PREVIOUS_TEXT,
+                no_speech_threshold=settings.WHISPER_NO_SPEECH_THRESHOLD,
+                log_prob_threshold=settings.WHISPER_LOG_PROB_THRESHOLD,
                 word_timestamps=True
             )
+
+            # If language was auto-detected with low confidence (< 0.40) and not English,
+            # re-transcribe with language='en' to avoid spurious foreign language hallucinations
+            if lang_param is None and info.language != "en" and getattr(info, "language_probability", 0.0) < 0.40:
+                segments_gen, info = model.transcribe(
+                    str(audio_path),
+                    beam_size=settings.WHISPER_BEAM_SIZE,
+                    language="en",
+                    condition_on_previous_text=settings.WHISPER_CONDITION_ON_PREVIOUS_TEXT,
+                    no_speech_threshold=settings.WHISPER_NO_SPEECH_THRESHOLD,
+                    log_prob_threshold=settings.WHISPER_LOG_PROB_THRESHOLD,
+                    word_timestamps=True
+                )
 
             raw_segments = []
             stt_segments = []
