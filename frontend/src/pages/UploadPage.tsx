@@ -9,6 +9,7 @@ export const UploadPage: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [languageMode, setLanguageMode] = useState<'hinglish' | 'english' | 'hindi' | 'auto'>('hinglish');
   const [settingsInfo, setSettingsInfo] = useState<{ version: number; sensitivity: string; criteriaCount: number } | null>(null);
 
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ export const UploadPage: React.FC = () => {
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('language_mode', languageMode);
 
     try {
       const response = await fetch('/api/v1/calls', {
@@ -76,7 +78,7 @@ export const UploadPage: React.FC = () => {
       {settingsInfo && (
         <div
           style={{
-            marginBottom: '20px',
+            marginBottom: '16px',
             padding: '12px 16px',
             backgroundColor: 'var(--color-surface)',
             borderRadius: '10px',
@@ -108,6 +110,53 @@ export const UploadPage: React.FC = () => {
           </span>
         </div>
       )}
+
+      {/* Transcription Language / Dialect Selector */}
+      <div
+        style={{
+          marginBottom: '20px',
+          padding: '14px 16px',
+          backgroundColor: 'var(--color-surface)',
+          borderRadius: '10px',
+          border: '1px solid var(--color-border)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+            Transcription Language / Mode:
+          </div>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
+            Select output dialect style
+          </span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+          {[
+            { id: 'hinglish', label: '🌟 Hinglish', desc: 'Roman Hindi' },
+            { id: 'english', label: '🇬🇧 English', desc: 'Standard / Translated' },
+            { id: 'hindi', label: '🇮🇳 हिंदी', desc: 'Devanagari' },
+            { id: 'auto', label: '🌐 Auto', desc: 'Language Detect' },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setLanguageMode(item.id as any)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: languageMode === item.id ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                backgroundColor: languageMode === item.id ? 'var(--color-primary-subtle)' : 'var(--color-surface-sunken)',
+                color: languageMode === item.id ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <div style={{ fontWeight: 600, fontSize: '13px' }}>{item.label}</div>
+              <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>{item.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <DropZone onFileSelect={setFile} disabled={isUploading} />
 

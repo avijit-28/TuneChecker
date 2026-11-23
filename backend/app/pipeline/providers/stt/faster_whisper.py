@@ -24,12 +24,30 @@ class FasterWhisperProvider(BaseSttProvider):
     def transcribe(self, audio_path: Path) -> SttResult:
         try:
             model = self.get_model()
-            lang_param = settings.WHISPER_LANGUAGE
+
+            # Select language and prompt based on WHISPER_LANGUAGE_MODE
+            mode = getattr(settings, "WHISPER_LANGUAGE_MODE", "hinglish").lower()
+            if mode == "hinglish":
+                lang_param = "en"
+                initial_prompt_val = (
+                    "Yeh customer sales call Hindi aur Hinglish me hai. Roman script me verbatim Hinglish me transcribe karo: "
+                    "Haan, boliye, green packet khajoor do, pumpkin seeds, mix dry fruits, anjeer, do dena, teen dena."
+                )
+            elif mode == "hindi":
+                lang_param = "hi"
+                initial_prompt_val = "यह ग्राहक बिक्री कॉल हिंदी और हिंग्लिश में है। कृपया देवनागरी में ट्रांसक्राइब करें।"
+            elif mode == "english":
+                lang_param = "en"
+                initial_prompt_val = "Customer sales call, product orders, quantities, pricing, delivery, English conversation."
+            else:
+                lang_param = settings.WHISPER_LANGUAGE
+                initial_prompt_val = settings.WHISPER_INITIAL_PROMPT
+
             segments_gen, info = model.transcribe(
                 str(audio_path),
                 beam_size=settings.WHISPER_BEAM_SIZE,
                 language=lang_param,
-                initial_prompt=settings.WHISPER_INITIAL_PROMPT,
+                initial_prompt=initial_prompt_val,
                 condition_on_previous_text=settings.WHISPER_CONDITION_ON_PREVIOUS_TEXT,
                 no_speech_threshold=settings.WHISPER_NO_SPEECH_THRESHOLD,
                 log_prob_threshold=settings.WHISPER_LOG_PROB_THRESHOLD,
@@ -43,7 +61,7 @@ class FasterWhisperProvider(BaseSttProvider):
                     str(audio_path),
                     beam_size=settings.WHISPER_BEAM_SIZE,
                     language="en",
-                    initial_prompt=settings.WHISPER_INITIAL_PROMPT,
+                    initial_prompt=initial_prompt_val,
                     condition_on_previous_text=settings.WHISPER_CONDITION_ON_PREVIOUS_TEXT,
                     no_speech_threshold=settings.WHISPER_NO_SPEECH_THRESHOLD,
                     log_prob_threshold=settings.WHISPER_LOG_PROB_THRESHOLD,

@@ -1,7 +1,7 @@
 import os
 import uuid
 from typing import Optional
-from fastapi import APIRouter, Depends, Query, UploadFile, File, Response, status
+from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, Response, status
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 from app.db.session import get_db
@@ -22,8 +22,11 @@ router = APIRouter(prefix="/calls", tags=["Calls"])
 async def upload_call(
     response: Response,
     file: UploadFile = File(...),
+    language_mode: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
+    if language_mode:
+        settings.WHISPER_LANGUAGE_MODE = language_mode.strip().lower()
     sanitized_name = validate_filename_and_mime(file.filename, file.content_type)
 
     # Ensure storage directory exists

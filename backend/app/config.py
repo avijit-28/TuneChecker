@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     WHISPER_DEVICE: str = "cpu"
     WHISPER_COMPUTE_TYPE: str = "int8"
     WHISPER_LANGUAGE: Optional[str] = None
+    WHISPER_LANGUAGE_MODE: str = "hinglish"  # "hinglish", "hindi", "english", "auto"
     WHISPER_NO_SPEECH_THRESHOLD: float = 0.85
     WHISPER_LOG_PROB_THRESHOLD: float = -2.5
     WHISPER_CONDITION_ON_PREVIOUS_TEXT: bool = False
