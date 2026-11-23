@@ -58,7 +58,7 @@ class Settings(BaseSettings):
 
     # STT Settings (Zero-Cost Local Faster-Whisper)
     STT_PROVIDER: str = "faster_whisper"
-    WHISPER_MODEL: str = "base"
+    WHISPER_MODEL: str = "large-v3-turbo"
     WHISPER_DEVICE: str = "cpu"
     WHISPER_COMPUTE_TYPE: str = "int8"
     WHISPER_LANGUAGE: Optional[str] = None
