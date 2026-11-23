@@ -5,27 +5,27 @@ import pytest
 from app.audio.upload_checks import (
     validate_filename_and_mime,
     validate_ftyp_box,
+    validate_audio_container,
 )
 from app.audio.validation import validate_audio_file
 from app.utils.errors import AppError
 
 
 def test_filename_and_mime_validation_valid():
-    sanitized = validate_filename_and_mime("test_call.m4a", "audio/mp4")
-    assert sanitized == "test_call.m4a"
-
-    sanitized = validate_filename_and_mime("path/to/nested\\call.M4A", "audio/x-m4a")
-    assert sanitized == "call.M4A"
+    assert validate_filename_and_mime("test_call.m4a", "audio/mp4") == "test_call.m4a"
+    assert validate_filename_and_mime("call.mp3", "audio/mpeg") == "call.mp3"
+    assert validate_filename_and_mime("recording.wav", "audio/wav") == "recording.wav"
+    assert validate_filename_and_mime("path/to/nested\\call.M4A", "audio/x-m4a") == "call.M4A"
 
 
 def test_filename_validation_invalid_extension():
     with pytest.raises(AppError) as exc_info:
-        validate_filename_and_mime("audio.mp3", "audio/mpeg")
+        validate_filename_and_mime("document.pdf", "application/pdf")
     assert exc_info.value.code == "INVALID_FILE_TYPE"
     assert exc_info.value.status_code == 415
 
     with pytest.raises(AppError) as exc_info:
-        validate_filename_and_mime("recording.wav", "audio/wav")
+        validate_filename_and_mime("audio.flac", "audio/flac")
     assert exc_info.value.code == "INVALID_FILE_TYPE"
 
 
@@ -35,18 +35,25 @@ def test_filename_validation_empty():
     assert exc_info.value.code == "FILE_EMPTY"
 
 
-def test_ftyp_box_verification():
-    # Valid MP4 header: 4-byte size followed by 'ftyp'
-    valid_header = b"\x00\x00\x00\x20ftypM4A \x00\x00\x00\x00"
-    assert validate_ftyp_box(valid_header) is True
+def test_audio_container_verification():
+    # Valid M4A
+    m4a_header = b"\x00\x00\x00\x20ftypM4A \x00\x00\x00\x00"
+    assert validate_audio_container(m4a_header, "call.m4a") is True
+    assert validate_audio_container(b"RIFF\x24\x08\x00\x00WAVEfmt ", "call.m4a") is False
 
-    # Invalid header (WAV/RIFF)
-    wav_header = b"RIFF\x24\x08\x00\x00WAVEfmt "
-    assert validate_ftyp_box(wav_header) is False
+    # Valid WAV
+    wav_header = b"RIFF\x24\x08\x00\x00WAVEfmt \x10\x00\x00\x00"
+    assert validate_audio_container(wav_header, "call.wav") is True
+    assert validate_audio_container(m4a_header, "call.wav") is False
 
-    # Short/truncated header
-    assert validate_ftyp_box(b"\x00\x00\x00") is False
-    assert validate_ftyp_box(b"") is False
+    # Valid MP3
+    mp3_id3 = b"ID3\x03\x00\x00\x00\x00\x00#"
+    assert validate_audio_container(mp3_id3, "call.mp3") is True
+    mp3_sync = b"\xff\xfb\x90d\x00\x00\x00\x00"
+    assert validate_audio_container(mp3_sync, "call.mp3") is True
+
+    # Truncated header
+    assert validate_audio_container(b"\x00", "call.m4a") is False
 
 
 def test_validate_audio_file_empty_or_missing(tmp_path: Path):

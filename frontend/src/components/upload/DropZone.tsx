@@ -13,8 +13,10 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileSelect, disabled }) =>
 
   const validateAndSelect = (file: File) => {
     setError(null);
-    if (!file.name.toLowerCase().endsWith('.m4a')) {
-      setError('Only .m4a audio recordings are accepted.');
+    const validExts = ['.m4a', '.mp3', '.wav'];
+    const lowerName = file.name.toLowerCase();
+    if (!validExts.some((ext) => lowerName.endsWith(ext))) {
+      setError('Only .m4a, .mp3, and .wav audio recordings are accepted.');
       return;
     }
     const maxMb = 50;
@@ -47,7 +49,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileSelect, disabled }) =>
       <div
         role="button"
         tabIndex={disabled ? -1 : 0}
-        aria-label="Upload call recording: drop .m4a file or press Enter to browse"
+        aria-label="Upload call recording: drop .m4a, .mp3, or .wav file or press Enter to browse"
         onClick={() => !disabled && inputRef.current?.click()}
         onKeyDown={(e) => {
           if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
@@ -83,7 +85,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileSelect, disabled }) =>
         <input
           type="file"
           ref={inputRef}
-          accept=".m4a,audio/mp4,audio/x-m4a"
+          accept=".m4a,.mp3,.wav,audio/mp4,audio/mpeg,audio/wav,audio/x-m4a"
           style={{ display: 'none' }}
           onChange={(e) => {
             if (e.target.files && e.target.files.length > 0) {
@@ -112,11 +114,11 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileSelect, disabled }) =>
         </div>
 
         <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-          Drop your .m4a call recording here, or{' '}
+          Drop your .m4a, .mp3, or .wav call recording here, or{' '}
           <span style={{ color: 'var(--color-primary)', textDecoration: 'underline' }}>browse</span>
         </div>
         <div style={{ fontSize: '13px', color: 'var(--color-text-tertiary)', marginTop: '6px' }}>
-          AAC encoded .m4a audio • 10 seconds to 30 minutes • Up to 50 MB
+          .m4a, .mp3, or .wav audio • 10 seconds to 30 minutes • Up to 50 MB
         </div>
       </div>
 

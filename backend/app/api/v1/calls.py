@@ -6,7 +6,7 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.services.call_service import CallService
-from app.audio.upload_checks import validate_filename_and_mime, validate_ftyp_box
+from app.audio.upload_checks import validate_filename_and_mime, validate_audio_container
 from app.config import settings
 from app.utils.errors import AppError
 from app.jobs.worker import queue_call_processing
@@ -28,7 +28,8 @@ async def upload_call(
 
     # Ensure storage directory exists
     os.makedirs(settings.STORAGE_LOCAL_PATH, exist_ok=True)
-    storage_key = f"{uuid.uuid4().hex}.m4a"
+    ext = os.path.splitext(sanitized_name)[1].lower() or ".m4a"
+    storage_key = f"{uuid.uuid4().hex}{ext}"
     dest_path = os.path.join(settings.STORAGE_LOCAL_PATH, storage_key)
 
     max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
@@ -59,10 +60,10 @@ async def upload_call(
             os.remove(dest_path)
         raise AppError("FILE_EMPTY", "Uploaded file is empty (0 bytes).", 422)
 
-    if not validate_ftyp_box(header_bytes):
+    if not validate_audio_container(header_bytes, sanitized_name):
         if os.path.exists(dest_path):
             os.remove(dest_path)
-        raise AppError("INVALID_FILE_TYPE", "File is missing standard M4A / MP4 ftyp container box.", 415)
+        raise AppError("INVALID_FILE_TYPE", f"File header does not match expected audio container format for '{ext}'.", 415)
 
     call = CallService.create_call(db, sanitized_name, total_bytes, storage_key)
 
