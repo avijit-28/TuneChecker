@@ -66,6 +66,7 @@ class Settings(BaseSettings):
     WHISPER_LOG_PROB_THRESHOLD: float = -2.5
     WHISPER_CONDITION_ON_PREVIOUS_TEXT: bool = False
     WHISPER_BEAM_SIZE: int = 5
+    WHISPER_INITIAL_PROMPT: Optional[str] = "Customer sales call, product orders, quantities, pricing, delivery, Hindi and English conversation."
     
     # LLM Settings (Zero-Cost Local Ollama)
     LLM_PROVIDER: str = "ollama"
