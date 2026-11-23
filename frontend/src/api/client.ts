@@ -30,7 +30,9 @@ export async function apiRequest<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = path.startsWith('/') ? path : `/api/v1/${path}`;
+  const url = path.startsWith('/api')
+    ? path
+    : `/api/v1${path.startsWith('/') ? path : `/${path}`}`;
   const headers = new Headers(options.headers || {});
 
   if (!headers.has('Accept')) {
