@@ -15,6 +15,8 @@ def test_filename_and_mime_validation_valid():
     assert validate_filename_and_mime("test_call.m4a", "audio/mp4") == "test_call.m4a"
     assert validate_filename_and_mime("call.mp3", "audio/mpeg") == "call.mp3"
     assert validate_filename_and_mime("recording.wav", "audio/wav") == "recording.wav"
+    assert validate_filename_and_mime("meeting.mpeg", "video/mpeg") == "meeting.mpeg"
+    assert validate_filename_and_mime("voice.mpg", "audio/mpeg") == "voice.mpg"
     assert validate_filename_and_mime("path/to/nested\\call.M4A", "audio/x-m4a") == "call.M4A"
 
 
@@ -46,9 +48,12 @@ def test_audio_container_verification():
     assert validate_audio_container(wav_header, "call.wav") is True
     assert validate_audio_container(m4a_header, "call.wav") is False
 
-    # Valid MP3
+    # Valid MP3 / MPEG
     mp3_id3 = b"ID3\x03\x00\x00\x00\x00\x00#"
     assert validate_audio_container(mp3_id3, "call.mp3") is True
+    assert validate_audio_container(mp3_id3, "call.mpeg") is True
+    mpeg_ps = b"\x00\x00\x01\xba\x44\x00\x04\x00"
+    assert validate_audio_container(mpeg_ps, "video.mpg") is True
     mp3_sync = b"\xff\xfb\x90d\x00\x00\x00\x00"
     assert validate_audio_container(mp3_sync, "call.mp3") is True
 

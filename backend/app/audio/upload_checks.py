@@ -2,16 +2,18 @@ from pathlib import Path
 from app.utils.errors import AppError
 from app.config import settings
 
-VALID_EXTENSIONS = {".m4a", ".mp3", ".wav"}
+VALID_EXTENSIONS = {".m4a", ".mp3", ".wav", ".mpeg", ".mpg", ".mpga"}
 VALID_MIME_TYPES = {
     "audio/mp4",
     "audio/x-m4a",
     "audio/m4a",
     "audio/mpeg",
     "audio/mp3",
+    "audio/mpg",
     "audio/wav",
     "audio/x-wav",
     "audio/wave",
+    "video/mpeg",
     "application/octet-stream"
 }
 
@@ -24,7 +26,7 @@ def validate_filename_and_mime(filename: str, content_type: str) -> str:
     if not any(lower_name.endswith(ext) for ext in VALID_EXTENSIONS):
         raise AppError(
             "INVALID_FILE_TYPE",
-            f"Unsupported file extension. Only .m4a, .mp3, and .wav audio files are supported.",
+            f"Unsupported file extension. Supported formats: .m4a, .mp3, .wav, .mpeg, .mpg.",
             415,
             details={"filename": filename, "supported": sorted(list(VALID_EXTENSIONS))}
         )
@@ -53,12 +55,14 @@ def validate_audio_container(header_bytes: bytes, filename: str) -> bool:
         if len(header_bytes) < 12:
             return False
         return header_bytes[:4] == b"RIFF" and header_bytes[8:12] == b"WAVE"
-    elif ext == ".mp3":
+    elif ext in (".mp3", ".mpeg", ".mpg", ".mpga"):
         if header_bytes[:3] == b"ID3":
+            return True
+        if len(header_bytes) >= 4 and header_bytes[:4] in (b"\x00\x00\x01\xba", b"\x00\x00\x01\xb3"):
             return True
         if len(header_bytes) >= 2 and header_bytes[0] == 0xFF and (header_bytes[1] & 0xE0) == 0xE0:
             return True
-        # Allow pass-through for headerless MP3 bitstreams (FFmpeg decode test will strictly verify)
+        # Allow pass-through for MPEG bitstreams (FFmpeg decode test will strictly verify)
         return True
     
     return False
