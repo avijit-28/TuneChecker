@@ -1,0 +1,47 @@
+import json
+import httpx
+from typing import Any
+from app.config import settings
+from app.pipeline.providers.llm.base import BaseLlmProvider
+from app.utils.errors import AppError
+
+class OllamaLlmProvider(BaseLlmProvider):
+    def __init__(self, base_url: str = None, model: str = None):
+        self.base_url = base_url or settings.OLLAMA_BASE_URL
+        self.model = model or settings.LLM_MODEL
+        self.endpoint = f"{self.base_url.rstrip('/')}/api/chat"
+
+    def generate_json(self, system_prompt: str, user_prompt: str) -> dict[str, Any]:
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            "format": "json",
+            "options": {
+                "temperature": settings.LLM_TEMPERATURE,
+                "seed": 42,
+                "num_predict": 512
+            },
+            "stream": False
+        }
+
+        try:
+            response = httpx.post(self.endpoint, json=payload, timeout=settings.LLM_TIMEOUT_SEC)
+        except httpx.ConnectError:
+            raise AppError("LLM_UNAVAILABLE", "Ollama local service is not reachable on port 11434.", 503, retryable=True)
+        except httpx.TimeoutException:
+            raise AppError("LLM_TIMEOUT", f"Ollama generation timed out after {settings.LLM_TIMEOUT_SEC}s.", 504, retryable=True)
+        except Exception as e:
+            raise AppError("LLM_UNAVAILABLE", f"Failed to communicate with Ollama: {str(e)}", 503, retryable=True)
+
+        if response.status_code != 200:
+            raise AppError("LLM_UNAVAILABLE", f"Ollama returned HTTP {response.status_code}: {response.text}", 503, retryable=True)
+
+        try:
+            res_data = response.json()
+            content = res_data.get("message", {}).get("content", "")
+            return json.loads(content)
+        except Exception as e:
+            raise AppError("LLM_INVALID_OUTPUT", f"Failed to parse LLM response as JSON: {str(e)}", 500, retryable=True)

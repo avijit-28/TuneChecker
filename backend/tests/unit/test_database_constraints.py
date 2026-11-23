@@ -1,0 +1,84 @@
+import pytest
+from sqlalchemy import text
+from fastapi.testclient import TestClient
+from app.main import app
+from app.db.session import SessionLocal
+
+@pytest.fixture
+def db():
+    session = SessionLocal()
+    yield session
+    session.close()
+
+@pytest.fixture
+def client():
+    return TestClient(app)
+
+def test_health_endpoint(client):
+    r = client.get("/api/v1/health")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["status"] == "ok"
+    assert data["checks"]["database"] == "ok"
+    assert data["checks"]["settings"] == "ok"
+    assert data["checks"]["ffmpeg"] == "ok"
+
+def test_settings_endpoints(client):
+    # GET settings
+    r = client.get("/api/v1/settings")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["version"] >= 1
+    assert data["sensitivity"] == "medium"
+    assert "tone" in data["config"]
+
+    # PUT settings invalid sensitivity
+    bad_payload = dict(data["config"])
+    bad_payload["tone"]["sensitivity"] = "ultra_high"
+    r_bad = client.put("/api/v1/settings", json=bad_payload)
+    assert r_bad.status_code == 422
+    err = r_bad.json()
+    assert "error" in err
+    assert err["error"]["code"] == "REQUEST_INVALID"
+
+    # POST reset
+    r_reset = client.post("/api/v1/settings/reset")
+    assert r_reset.status_code == 200
+    assert r_reset.json()["source"] == "reset"
+
+def test_dashboard_summary_zero_state(client):
+    r = client.get("/api/v1/dashboard/summary")
+    assert r.status_code == 200
+    data = r.json()
+    assert "kpis" in data
+    assert "tone_distribution" in data
+    assert isinstance(data["recent_calls"], list)
+
+def test_calls_list_and_404(client):
+    # List calls
+    r = client.get("/api/v1/calls")
+    assert r.status_code == 200
+    data = r.json()
+    assert "items" in data
+    assert "total" in data
+
+    # 404 for unknown call
+    r_not_found = client.get("/api/v1/calls/non-existent-uuid")
+    assert r_not_found.status_code == 404
+    err = r_not_found.json()
+    assert err["error"]["code"] == "CALL_NOT_FOUND"
+
+def test_trigger_settings_versions_immutable(db):
+    # Updating settings_versions must be aborted by trigger
+    with pytest.raises(Exception) as exc:
+        db.execute(text("UPDATE settings_versions SET sensitivity='high' WHERE version=1"))
+        db.commit()
+    assert "settings_versions rows are immutable" in str(exc.value)
+    db.rollback()
+
+    # Deleting settings_versions must be aborted by trigger
+    with pytest.raises(Exception) as exc:
+        db.execute(text("DELETE FROM settings_versions WHERE version=1"))
+        db.commit()
+    assert "settings_versions rows cannot be deleted" in str(exc.value)
+    db.rollback()

@@ -1,0 +1,548 @@
+import os
+import uuid
+from datetime import datetime
+from typing import Optional, Any
+from sqlalchemy.orm import Session
+from sqlalchemy import desc, asc
+from app.db.models.calls import Call
+from app.db.models.stage_runs import StageRun
+from app.db.models.transcripts import Transcript
+from app.db.models.speaker_roles import SpeakerRole
+from app.db.models.utterances import Utterance
+from app.db.models.analyses import Analysis, EvidenceItem, ActionItem
+from app.db.models.settings import SettingsVersion
+from app.config import settings
+from app.utils.errors import AppError
+
+def get_status_group(status: str) -> str:
+    if status in ("uploaded", "validating", "transcribing", "analyzing"):
+        return "in_progress"
+    return status
+
+class CallService:
+    @staticmethod
+    def create_call(db: Session, filename: str, size_bytes: int, storage_key: str) -> Call:
+        call_id = str(uuid.uuid4())
+        call = Call(
+            id=call_id,
+            original_filename=filename,
+            storage_key=storage_key,
+            size_bytes=size_bytes,
+            status="uploaded",
+            attempt_count=1,
+            is_synthetic=0
+        )
+        db.add(call)
+        db.commit()
+        db.refresh(call)
+        return call
+
+    @staticmethod
+    def list_calls(
+        db: Session,
+        page: int = 1,
+        page_size: int = 20,
+        q: Optional[str] = None,
+        tone: Optional[str] = None,
+        status_filter: Optional[str] = None,
+        sort: str = "newest"
+    ) -> tuple[list[dict[str, Any]], int]:
+        query = db.query(Call)
+
+        if q:
+            escaped_q = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            query = query.filter(Call.original_filename.ilike(f"%{escaped_q}%"))
+
+        if status_filter:
+            if status_filter == "in_progress":
+                query = query.filter(Call.status.in_(["uploaded", "validating", "transcribing", "analyzing"]))
+            elif status_filter in ["complete", "partial", "failed"]:
+                query = query.filter(Call.status == status_filter)
+
+        order_col = Call.created_at.desc() if sort == "newest" else Call.created_at.asc()
+        query = query.order_by(order_col, Call.id.desc())
+
+        total = query.count()
+        offset = (page - 1) * page_size
+        calls = query.offset(offset).limit(page_size).all()
+
+        items = []
+        for c in calls:
+            latest_analysis = (
+                db.query(Analysis)
+                .filter(Analysis.call_id == c.id)
+                .order_by(Analysis.run_number.desc())
+                .first()
+            )
+            call_tone = latest_analysis.verdict if latest_analysis else None
+
+            if tone:
+                tone_upper = tone.upper()
+                if tone == "none" and call_tone is not None:
+                    continue
+                elif tone_upper in ("RED", "GREEN") and call_tone != tone_upper:
+                    continue
+
+            items.append({
+                "id": c.id,
+                "name": c.original_filename,
+                "status": c.status,
+                "status_group": get_status_group(c.status),
+                "tone": call_tone,
+                "duration_ms": c.duration_ms,
+                "size_bytes": c.size_bytes,
+                "is_synthetic": bool(c.is_synthetic),
+                "created_at": c.created_at,
+            })
+
+        return items, total
+
+    @staticmethod
+    def get_call_detail(db: Session, call_id: str) -> dict[str, Any]:
+        c = db.query(Call).filter(Call.id == call_id).first()
+        if not c:
+            raise AppError("CALL_NOT_FOUND", f"Call with ID '{call_id}' not found.", 404)
+
+        latest_analysis = (
+            db.query(Analysis)
+            .filter(Analysis.call_id == c.id)
+            .order_by(Analysis.run_number.desc())
+            .first()
+        )
+
+        analysis_dict = None
+        if latest_analysis:
+            analysis_dict = {
+                "run_number": latest_analysis.run_number,
+                "status": latest_analysis.status,
+                "verdict": latest_analysis.verdict,
+                "confidence_level": latest_analysis.confidence_level,
+                "settings_version": latest_analysis.settings_version,
+                "created_at": latest_analysis.created_at,
+            }
+
+        failure_dict = None
+        if c.failure_code or c.failure_message:
+            failure_dict = {
+                "stage": c.failure_stage,
+                "code": c.failure_code,
+                "message": c.failure_message,
+                "retryable": c.status != "complete"
+            }
+
+        return {
+            "id": c.id,
+            "name": c.original_filename,
+            "status": c.status,
+            "status_group": get_status_group(c.status),
+            "size_bytes": c.size_bytes,
+            "duration_ms": c.duration_ms,
+            "audio_retained": c.storage_key is not None,
+            "is_synthetic": bool(c.is_synthetic),
+            "failure": failure_dict,
+            "latest_analysis": analysis_dict,
+            "created_at": c.created_at,
+            "updated_at": c.updated_at,
+        }
+
+    @staticmethod
+    def get_call_status(db: Session, call_id: str) -> dict[str, Any]:
+        c = db.query(Call).filter(Call.id == call_id).first()
+        if not c:
+            raise AppError("CALL_NOT_FOUND", f"Call with ID '{call_id}' not found.", 404)
+
+        all_stages = [
+            "validation",
+            "transcription",
+            "speaker_identification",
+            "tone_analysis",
+            "evidence_extraction",
+            "action_items",
+            "completion"
+        ]
+
+        stage_runs = (
+            db.query(StageRun)
+            .filter(StageRun.call_id == call_id)
+            .order_by(StageRun.attempt.desc())
+            .all()
+        )
+        stage_run_map: dict[str, StageRun] = {}
+        for sr in stage_runs:
+            if sr.stage not in stage_run_map:
+                stage_run_map[sr.stage] = sr
+
+        stages_list = []
+        completed_stages = 0
+        current_stage = None
+        started_at = None
+
+        for stage_name in all_stages:
+            sr = stage_run_map.get(stage_name)
+            if sr:
+                if started_at is None:
+                    started_at = sr.started_at
+                elapsed_ms = None
+                if sr.finished_at and sr.started_at:
+                    elapsed_ms = int((sr.finished_at - sr.started_at).total_seconds() * 1000)
+                if sr.status == "succeeded":
+                    completed_stages += 1
+                elif sr.status == "running":
+                    current_stage = stage_name
+
+                stages_list.append({
+                    "stage": stage_name,
+                    "status": sr.status,
+                    "attempt": sr.attempt,
+                    "started_at": sr.started_at,
+                    "finished_at": sr.finished_at,
+                    "elapsed_ms": elapsed_ms,
+                    "message": sr.result_summary,
+                    "error_code": sr.error_code
+                })
+            else:
+                stages_list.append({
+                    "stage": stage_name,
+                    "status": "pending",
+                    "attempt": None,
+                    "started_at": None,
+                    "finished_at": None,
+                    "elapsed_ms": None,
+                    "message": None,
+                    "error_code": None
+                })
+
+        completion_run = stage_run_map.get("completion")
+        completed_at = completion_run.finished_at if completion_run and completion_run.status == "succeeded" else None
+
+        failure_dict = None
+        if c.failure_code:
+            failure_dict = {
+                "stage": c.failure_stage,
+                "code": c.failure_code,
+                "message": c.failure_message,
+                "retryable": c.status != "complete"
+            }
+
+        latest_analysis = (
+            db.query(Analysis)
+            .filter(Analysis.call_id == call_id)
+            .order_by(Analysis.run_number.desc())
+            .first()
+        )
+        partial_reason = latest_analysis.partial_reason if latest_analysis else None
+
+        return {
+            "call_id": c.id,
+            "status": c.status,
+            "status_group": get_status_group(c.status),
+            "current_stage": current_stage,
+            "completed_stages": completed_stages,
+            "total_stages": 7,
+            "attempt_count": c.attempt_count,
+            "started_at": started_at or c.created_at,
+            "completed_at": completed_at,
+            "failure": failure_dict,
+            "partial_reason": partial_reason,
+            "stages": stages_list,
+            "updated_at": c.updated_at
+        }
+
+    @staticmethod
+    def get_transcript(db: Session, call_id: str) -> dict[str, Any]:
+        c = db.query(Call).filter(Call.id == call_id).first()
+        if not c:
+            raise AppError("CALL_NOT_FOUND", f"Call with ID '{call_id}' not found.", 404)
+
+        t = db.query(Transcript).filter(Transcript.call_id == call_id).first()
+        if not t or t.status != "completed":
+            raise AppError("TRANSCRIPT_NOT_READY", "Transcript is not ready yet.", 409)
+
+        roles = db.query(SpeakerRole).filter(SpeakerRole.call_id == call_id).all()
+        utterances = (
+            db.query(Utterance)
+            .filter(Utterance.call_id == call_id)
+            .order_by(Utterance.idx.asc())
+            .all()
+        )
+
+        # Compute talk time and turn count per speaker
+        speaker_stats: dict[str, dict] = {}
+        for u in utterances:
+            lbl = u.speaker_label
+            if lbl not in speaker_stats:
+                speaker_stats[lbl] = {"talk_time_ms": 0, "turn_count": 0}
+            speaker_stats[lbl]["talk_time_ms"] += (u.end_ms - u.start_ms)
+            speaker_stats[lbl]["turn_count"] += 1
+
+        speakers_list = []
+        for r in roles:
+            stats = speaker_stats.get(r.speaker_label, {"talk_time_ms": 0, "turn_count": 0})
+            speakers_list.append({
+                "label": r.speaker_label,
+                "role": r.role,
+                "source": r.source,
+                "status": r.status,
+                "level": r.level,
+                "talk_time_ms": stats["talk_time_ms"],
+                "turn_count": stats["turn_count"]
+            })
+
+        utterances_list = [
+            {
+                "id": u.id,
+                "idx": u.idx,
+                "speaker_label": u.speaker_label,
+                "start_ms": u.start_ms,
+                "end_ms": u.end_ms,
+                "text": u.text,
+                "asr_confidence": u.asr_confidence
+            }
+            for u in utterances
+        ]
+
+        return {
+            "call_id": c.id,
+            "status": t.status,
+            "provider": t.provider,
+            "model": t.model,
+            "language": t.language,
+            "speaker_count": t.speaker_count,
+            "audio_seconds": t.audio_seconds,
+            "speakers": speakers_list,
+            "utterances": utterances_list
+        }
+
+    @staticmethod
+    def get_analysis(db: Session, call_id: str) -> dict[str, Any]:
+        c = db.query(Call).filter(Call.id == call_id).first()
+        if not c:
+            raise AppError("CALL_NOT_FOUND", f"Call with ID '{call_id}' not found.", 404)
+
+        analysis = (
+            db.query(Analysis)
+            .filter(Analysis.call_id == call_id)
+            .order_by(Analysis.run_number.desc())
+            .first()
+        )
+        if not analysis or analysis.status not in ("complete", "partial"):
+            raise AppError("ANALYSIS_NOT_READY", "Analysis is not ready yet.", 409)
+
+        evidence_items = (
+            db.query(EvidenceItem, Utterance.start_ms)
+            .join(Utterance, EvidenceItem.utterance_id == Utterance.id)
+            .filter(EvidenceItem.analysis_id == analysis.id)
+            .order_by(EvidenceItem.ref.asc())
+            .all()
+        )
+        evidence_list = [
+            {
+                "id": e.id,
+                "ref": e.ref,
+                "utterance_id": e.utterance_id,
+                "speaker_label": e.speaker_label,
+                "quote": e.quote,
+                "char_start": e.char_start,
+                "char_end": e.char_end,
+                "criterion_id": e.criterion_id,
+                "severity": e.severity,
+                "rationale": e.rationale,
+                "start_ms": start_ms
+            }
+            for e, start_ms in evidence_items
+        ]
+
+        action_items = (
+            db.query(ActionItem, Utterance.start_ms)
+            .join(Utterance, ActionItem.utterance_id == Utterance.id)
+            .filter(ActionItem.analysis_id == analysis.id)
+            .order_by(ActionItem.ref.asc())
+            .all()
+        )
+        action_list = [
+            {
+                "id": a.id,
+                "ref": a.ref,
+                "type": a.type,
+                "task": a.task,
+                "modality": a.modality,
+                "owner": {
+                    "text": a.owner_text,
+                    "basis": a.owner_basis
+                },
+                "deadline": a.deadline_text,
+                "quote": a.quote,
+                "utterance_id": a.utterance_id,
+                "start_ms": start_ms
+            }
+            for a, start_ms in action_items
+        ]
+
+        # Fetch settings snapshot
+        settings_ver = db.query(SettingsVersion).filter(SettingsVersion.version == analysis.settings_version).first()
+        settings_snapshot = {
+            "version": analysis.settings_version,
+            "sensitivity": settings_ver.sensitivity if settings_ver else "medium"
+        }
+
+        sales_rep_dict = None
+        if analysis.rep_speaker_label:
+            rep_role = (
+                db.query(SpeakerRole)
+                .filter(SpeakerRole.call_id == call_id, SpeakerRole.speaker_label == analysis.rep_speaker_label)
+                .first()
+            )
+            if rep_role:
+                sales_rep_dict = {
+                    "label": rep_role.speaker_label,
+                    "source": rep_role.source,
+                    "status": rep_role.status
+                }
+
+        return {
+            "id": analysis.id,
+            "call_id": c.id,
+            "run_number": analysis.run_number,
+            "status": analysis.status,
+            "verdict": analysis.verdict,
+            "confidence": {
+                "level": analysis.confidence_level or "low",
+                "factors": analysis.confidence_factors or {}
+            },
+            "limited_evidence_reason": analysis.limited_evidence_reason,
+            "explanation": analysis.explanation,
+            "sales_rep": sales_rep_dict,
+            "evidence": evidence_list,
+            "action_items": action_list,
+            "settings_snapshot": settings_snapshot,
+            "created_at": analysis.created_at
+        }
+
+    @staticmethod
+    def update_speaker_roles(db: Session, call_id: str, new_roles: dict[str, str]) -> None:
+        c = db.query(Call).filter(Call.id == call_id).first()
+        if not c:
+            raise AppError("CALL_NOT_FOUND", f"Call with ID '{call_id}' not found.", 404)
+
+        if c.status in ("uploaded", "validating", "transcribing", "analyzing"):
+            raise AppError("CALL_IN_PROGRESS", "Cannot update speaker roles while call is processing.", 409)
+
+        rep_count = sum(1 for r in new_roles.values() if r == "sales_rep")
+        if rep_count != 1:
+            raise AppError("INVALID_ROLES", "Exactly one speaker must be designated as 'sales_rep'.", 422)
+
+        existing_roles = db.query(SpeakerRole).filter(SpeakerRole.call_id == call_id).all()
+        role_map = {r.speaker_label: r for r in existing_roles}
+
+        # Clear existing rep first to avoid unique constraint violation
+        for r in existing_roles:
+            r.role = "unknown"
+            r.status = "unresolved"
+        db.flush()
+
+        for label, assigned_role in new_roles.items():
+            if label not in role_map:
+                raise AppError("INVALID_ROLES", f"Speaker label '{label}' does not exist in call.", 422)
+            r = role_map[label]
+            r.role = assigned_role
+            r.source = "user"
+            r.status = "confirmed"
+            r.level = "high"
+
+        db.commit()
+
+    @staticmethod
+    def delete_call(db: Session, call_id: str) -> None:
+        c = db.query(Call).filter(Call.id == call_id).first()
+        if not c:
+            raise AppError("CALL_NOT_FOUND", f"Call with ID '{call_id}' not found.", 404)
+
+        if c.status in ("uploaded", "validating", "transcribing", "analyzing"):
+            raise AppError("CALL_IN_PROGRESS", "Cannot delete a call while analysis is in progress.", 409)
+
+        audio_file_path = None
+        if c.storage_key:
+            audio_file_path = os.path.join(settings.STORAGE_LOCAL_PATH, c.storage_key)
+
+        db.delete(c)
+        db.commit()
+
+        if audio_file_path and os.path.isfile(audio_file_path):
+            try:
+                os.remove(audio_file_path)
+            except OSError:
+                pass
+
+    @staticmethod
+    def get_dashboard_summary(db: Session) -> dict[str, Any]:
+        calls = db.query(Call).all()
+        total_calls = len(calls)
+        
+        red_count = 0
+        green_count = 0
+        awaiting = 0
+        failed = 0
+
+        for c in calls:
+            grp = get_status_group(c.status)
+            if grp == "in_progress":
+                awaiting += 1
+            elif grp == "failed":
+                failed += 1
+            
+            latest = (
+                db.query(Analysis)
+                .filter(Analysis.call_id == c.id)
+                .order_by(Analysis.run_number.desc())
+                .first()
+            )
+            if latest and latest.verdict == "RED":
+                red_count += 1
+            elif latest and latest.verdict == "GREEN":
+                green_count += 1
+
+        total_analyzed = red_count + green_count
+        not_analyzed = total_calls - total_analyzed
+
+        recent_call_rows, _ = CallService.list_calls(db, page=1, page_size=5)
+
+        recent_actions_raw = (
+            db.query(ActionItem, Call.original_filename, Utterance.start_ms)
+            .join(Call, ActionItem.call_id == Call.id)
+            .join(Utterance, ActionItem.utterance_id == Utterance.id)
+            .order_by(ActionItem.created_at.desc())
+            .limit(5)
+            .all()
+        )
+
+        recent_actions = [
+            {
+                "id": a.id,
+                "task": a.task,
+                "owner_text": a.owner_text,
+                "deadline_text": a.deadline_text,
+                "call_id": a.call_id,
+                "call_name": call_name,
+                "start_ms": start_ms,
+            }
+            for a, call_name, start_ms in recent_actions_raw
+        ]
+
+        return {
+            "generated_at": datetime.utcnow(),
+            "kpis": {
+                "total_calls": total_calls,
+                "total_analyzed": total_analyzed,
+                "red": red_count,
+                "green": green_count,
+                "awaiting_analysis": awaiting,
+                "needs_attention": failed
+            },
+            "tone_distribution": {
+                "red": red_count,
+                "green": green_count,
+                "not_analyzed": not_analyzed
+            },
+            "recent_calls": recent_call_rows,
+            "recent_action_items": recent_actions
+        }
