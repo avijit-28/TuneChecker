@@ -7,16 +7,17 @@ from app.services.settings_service import SettingsService
 from app.pipeline.providers.llm.ollama import OllamaLlmProvider
 from app.pipeline.safeguards.tone_decision import evaluate_tone_verdict
 
-TONE_ANALYSIS_SYSTEM = """You are a sales call quality tone evaluator. Your job is to detect whether a sales representative was rude, hostile, or dismissive to a customer.
+TONE_ANALYSIS_SYSTEM = """You are a sales call quality tone evaluator. Your job is to detect whether a sales representative was rude, hostile, dismissive, or unprofessional to a customer.
 
 CRITICAL INSTRUCTIONS:
 1. Normal business courtesy, helpful explanations, polite answers, and scheduling follow-ups are NOT violations.
 2. If the sales rep is polite, helpful, and professional, you MUST return:
    {"has_negative_tone": false, "candidate_findings": []}
-3. ONLY flag clear, undeniable violations:
+3. Flag violations matching these criteria:
    - "rude": blatantly disrespectful, mocking, or offensive remarks
    - "hostile": shouting, verbal attacks, aggressive confrontations, or threats
    - "dismissive": outright refusing to answer or brushing off customer concerns ("not my problem", "whatever")
+   - "unprofessional": overly casual slang (e.g. calling prospect "bro", "baby", "dude") or inappropriate familiarity in business sales
 
 Output strictly valid JSON with this exact structure:
 {
@@ -25,7 +26,7 @@ Output strictly valid JSON with this exact structure:
     {
       "utterance_id": string,
       "quote": string,
-      "criterion_id": "rude" | "hostile" | "dismissive",
+      "criterion_id": "rude" | "hostile" | "dismissive" | "unprofessional",
       "severity": 1 | 2 | 3,
       "rationale": string
     }
@@ -41,9 +42,9 @@ Response:
 
 Example 2 (Unprofessional Call):
 Utterances:
-Utterance [b1]: "Are you kidding me right now? That is ridiculous."
+Utterance [b1]: "Well, look, happy sales, bro. That's where it boils, baby."
 Response:
-{"has_negative_tone": true, "candidate_findings": [{"utterance_id": "b1", "quote": "Are you kidding me right now? That is ridiculous.", "criterion_id": "rude", "severity": 3, "rationale": "Rep insulted the customer."}]}
+{"has_negative_tone": true, "candidate_findings": [{"utterance_id": "b1", "quote": "Well, look, happy sales, bro.", "criterion_id": "unprofessional", "severity": 2, "rationale": "Rep used overly casual slang ('bro') addressing business prospect."}]}
 """
 
 def run_tone_stage(db: Session, call_id: str) -> dict:

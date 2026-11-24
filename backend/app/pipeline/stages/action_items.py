@@ -58,6 +58,7 @@ def run_action_items_stage(db: Session, call_id: str) -> dict:
         action_settings=actions_config
     )
 
+    db.query(ActionItem).filter(ActionItem.call_id == call_id).delete()
     for act in verified_actions:
         item = ActionItem(
             id=str(uuid.uuid4()),

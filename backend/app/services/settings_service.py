@@ -28,6 +28,13 @@ DEFAULT_SETTINGS_CONFIG = {
                 "description": "Brushing off or ignoring the customer's concern",
                 "enabled": True,
                 "custom": False
+            },
+            {
+                "id": "unprofessional",
+                "label": "Unprofessional / Slang",
+                "description": "Overly casual slang (e.g. 'bro', 'baby', 'dude') or informal remarks inappropriate for sales",
+                "enabled": True,
+                "custom": False
             }
         ],
         "sensitivity": "medium",
@@ -38,9 +45,9 @@ DEFAULT_SETTINGS_CONFIG = {
             "commitments": True,
             "follow_ups": True,
             "information_promised": True,
-            "customer_tasks": False
+            "customer_tasks": True
         },
-        "include_tentative": False,
+        "include_tentative": True,
         "owner_rule": "explicit_or_committing_speaker",
         "capture_relative_deadlines": True,
         "guidance": ""

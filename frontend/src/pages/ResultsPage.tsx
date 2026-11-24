@@ -5,6 +5,7 @@ import { VerdictCard } from '../components/analysis/VerdictCard';
 import { EvidencePanel } from '../components/analysis/EvidencePanel';
 import { ActionItemsPanel } from '../components/analysis/ActionItemsPanel';
 import { AuditorFeedbackCard } from '../components/analysis/AuditorFeedbackCard';
+import { AudioQualityReportCard, type AudioReportData } from '../components/analysis/AudioQualityReportCard';
 import { TranscriptViewer } from '../components/transcript/TranscriptViewer';
 import { SpeakerSwapModal } from '../components/transcript/SpeakerSwapModal';
 import { 
@@ -23,6 +24,7 @@ export const ResultsPage: React.FC = () => {
   const [callDetail, setCallDetail] = useState<any>(null);
   const [analysis, setAnalysis] = useState<any>(null);
   const [transcript, setTranscript] = useState<any>(null);
+  const [report, setReport] = useState<AudioReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,13 +47,15 @@ export const ResultsPage: React.FC = () => {
       }
 
       try {
-        const [analysisRes, transcriptRes] = await Promise.all([
+        const [analysisRes, transcriptRes, reportRes] = await Promise.all([
           apiRequest<any>(`/calls/${id}/analysis`),
           apiRequest<any>(`/calls/${id}/transcript`),
+          apiRequest<AudioReportData>(`/calls/${id}/report`).catch(() => null),
         ]);
 
         setAnalysis(analysisRes);
         setTranscript(transcriptRes);
+        setReport(reportRes);
       } catch {
         navigate(`/calls/${id}/processing`);
         return;
@@ -282,6 +286,7 @@ export const ResultsPage: React.FC = () => {
             currentVerdict={analysis.verdict || 'GREEN'}
             calibratedModel={analysis.calibrated_model}
           />
+          {report && <AudioQualityReportCard report={report} />}
         </div>
       )}
 

@@ -130,6 +130,10 @@ def get_call_transcript(call_id: str, db: Session = Depends(get_db)):
 def get_call_analysis(call_id: str, db: Session = Depends(get_db)):
     return CallService.get_analysis(db, call_id)
 
+@router.get("/{call_id}/report")
+def get_call_report(call_id: str, db: Session = Depends(get_db)):
+    return CallService.get_call_report(db, call_id)
+
 @router.put("/{call_id}/speaker-roles", status_code=status.HTTP_202_ACCEPTED)
 def update_speaker_roles(call_id: str, payload: dict, db: Session = Depends(get_db)):
     new_roles = payload.get("roles", {})

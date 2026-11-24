@@ -1,4 +1,5 @@
 import json
+import re
 import httpx
 from typing import Any
 from app.config import settings
@@ -22,7 +23,7 @@ class OllamaLlmProvider(BaseLlmProvider):
             "options": {
                 "temperature": settings.LLM_TEMPERATURE,
                 "seed": 42,
-                "num_predict": 512
+                "num_predict": 2048
             },
             "stream": False
         }
@@ -41,7 +42,27 @@ class OllamaLlmProvider(BaseLlmProvider):
 
         try:
             res_data = response.json()
-            content = res_data.get("message", {}).get("content", "")
-            return json.loads(content)
+            content = res_data.get("message", {}).get("content", "").strip()
+
+            # Strip markdown ```json fences if present
+            if content.startswith("```"):
+                content = re.sub(r"^```(?:json)?\s*", "", content)
+                content = re.sub(r"\s*```$", "", content)
+
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError:
+                # Attempt graceful JSON truncation recovery (e.g. cut off inside an array or string)
+                # Find last valid object or array boundary
+                trimmed = content
+                for cutoff in range(len(content) - 1, max(0, len(content) - 200), -1):
+                    sub = content[:cutoff].strip()
+                    if sub.endswith("}"):
+                        for closer in ["]}", "}"]:
+                            try:
+                                return json.loads(sub + closer)
+                            except Exception:
+                                pass
+                raise
         except Exception as e:
             raise AppError("LLM_INVALID_OUTPUT", f"Failed to parse LLM response as JSON: {str(e)}", 500, retryable=True)
