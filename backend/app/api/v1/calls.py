@@ -15,6 +15,8 @@ from app.schemas.calls import (
     CallDetailResponse,
     CallStatusResponse
 )
+from app.db.models.feedback import AuditorFeedback
+from app.learning.feedback_trainer import train_and_evaluate_feedback, predict_calibrated_tone
 
 router = APIRouter(prefix="/calls", tags=["Calls"])
 
@@ -209,6 +211,61 @@ def export_call(call_id: str, format: str = Query("json", pattern="^(json|markdo
         "call": detail,
         "analysis": analysis,
         "transcript": transcript
+    }
+
+@router.post("/feedback/train")
+def train_feedback_model(db: Session = Depends(get_db)):
+    """Trains a conservative TF-IDF + Logistic Regression model from human auditor reviews."""
+    result = train_and_evaluate_feedback(db)
+    return result
+
+@router.get("/{call_id}/feedback")
+def get_call_feedback(call_id: str, db: Session = Depends(get_db)):
+    """Fetches all auditor feedback records for a given call."""
+    entries = db.query(AuditorFeedback).filter(AuditorFeedback.call_id == call_id).order_by(AuditorFeedback.created_at.desc()).all()
+    return [
+        {
+            "id": fb.id,
+            "call_id": fb.call_id,
+            "agreed": fb.agreed,
+            "auditor_verdict": fb.auditor_verdict,
+            "notes": fb.notes,
+            "auditor_name": fb.auditor_name,
+            "created_at": fb.created_at.isoformat() if fb.created_at else None,
+        }
+        for fb in entries
+    ]
+
+@router.post("/{call_id}/feedback", status_code=status.HTTP_201_CREATED)
+def submit_call_feedback(call_id: str, payload: dict, db: Session = Depends(get_db)):
+    """Submits auditor feedback on the call quality verdict for continuous learning."""
+    agreed = payload.get("agreed", True)
+    auditor_verdict = payload.get("auditor_verdict", "GREEN").upper()
+    notes = payload.get("notes", "")
+    auditor_name = payload.get("auditor_name", "Sales Quality Auditor")
+
+    fb = AuditorFeedback(
+        id=uuid.uuid4().hex,
+        call_id=call_id,
+        analysis_id=payload.get("analysis_id"),
+        agreed=bool(agreed),
+        auditor_verdict=auditor_verdict,
+        notes=notes,
+        auditor_name=auditor_name
+    )
+    db.add(fb)
+    db.commit()
+    db.refresh(fb)
+
+    return {
+        "id": fb.id,
+        "call_id": fb.call_id,
+        "agreed": fb.agreed,
+        "auditor_verdict": fb.auditor_verdict,
+        "notes": fb.notes,
+        "auditor_name": fb.auditor_name,
+        "created_at": fb.created_at.isoformat() if fb.created_at else None,
+        "message": "Auditor review recorded successfully."
     }
 
 @router.delete("/{call_id}", status_code=status.HTTP_204_NO_CONTENT)

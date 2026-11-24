@@ -36,6 +36,9 @@ class FasterWhisperProvider(BaseSttProvider):
             elif mode == "hindi":
                 lang_param = "hi"
                 initial_prompt_val = "यह ग्राहक बिक्री कॉल हिंदी और हिंग्लिश में है। कृपया देवनागरी में ट्रांसक्राइब करें।"
+            elif mode == "bengali":
+                lang_param = "bn"
+                initial_prompt_val = "কাস্টমার সেলস কল, অর্ডার, দাম, প্রোডাক্ট এবং ডেলিভারির কথা।"
             elif mode == "english":
                 lang_param = "en"
                 initial_prompt_val = "Customer sales call, product orders, quantities, pricing, delivery, English conversation."
@@ -48,6 +51,7 @@ class FasterWhisperProvider(BaseSttProvider):
                 beam_size=settings.WHISPER_BEAM_SIZE,
                 language=lang_param,
                 initial_prompt=initial_prompt_val,
+                vad_filter=True,
                 condition_on_previous_text=settings.WHISPER_CONDITION_ON_PREVIOUS_TEXT,
                 no_speech_threshold=settings.WHISPER_NO_SPEECH_THRESHOLD,
                 log_prob_threshold=settings.WHISPER_LOG_PROB_THRESHOLD,
@@ -62,6 +66,7 @@ class FasterWhisperProvider(BaseSttProvider):
                     beam_size=settings.WHISPER_BEAM_SIZE,
                     language="en",
                     initial_prompt=initial_prompt_val,
+                    vad_filter=True,
                     condition_on_previous_text=settings.WHISPER_CONDITION_ON_PREVIOUS_TEXT,
                     no_speech_threshold=settings.WHISPER_NO_SPEECH_THRESHOLD,
                     log_prob_threshold=settings.WHISPER_LOG_PROB_THRESHOLD,

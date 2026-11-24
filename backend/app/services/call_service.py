@@ -399,6 +399,12 @@ class CallService:
                     "status": rep_role.status
                 }
 
+        # Calibrated feedback model prediction
+        utts = db.query(Utterance).filter(Utterance.call_id == call_id).order_by(Utterance.idx.asc()).all()
+        full_text = " ".join(u.text for u in utts).strip()
+        from app.learning.feedback_trainer import predict_calibrated_tone
+        calibrated_model_result = predict_calibrated_tone(full_text)
+
         return {
             "id": analysis.id,
             "call_id": c.id,
@@ -409,6 +415,7 @@ class CallService:
                 "level": analysis.confidence_level or "low",
                 "factors": analysis.confidence_factors or {}
             },
+            "calibrated_model": calibrated_model_result,
             "limited_evidence_reason": analysis.limited_evidence_reason,
             "explanation": analysis.explanation,
             "sales_rep": sales_rep_dict,

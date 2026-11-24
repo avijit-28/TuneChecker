@@ -2,7 +2,7 @@ from pathlib import Path
 from app.utils.errors import AppError
 from app.config import settings
 
-VALID_EXTENSIONS = {".m4a", ".mp4", ".mp3", ".wav", ".mpeg", ".mpg", ".mpga"}
+VALID_EXTENSIONS = {".m4a", ".mp4", ".mp3", ".wav", ".mpeg", ".mpg", ".mpga", ".webm"}
 VALID_MIME_TYPES = {
     "audio/mp4",
     "video/mp4",
@@ -15,6 +15,8 @@ VALID_MIME_TYPES = {
     "audio/x-wav",
     "audio/wave",
     "video/mpeg",
+    "audio/webm",
+    "video/webm",
     "application/octet-stream"
 }
 
@@ -52,6 +54,8 @@ def validate_audio_container(header_bytes: bytes, filename: str) -> bool:
     ext = Path(filename).suffix.lower()
     if ext in (".m4a", ".mp4"):
         return validate_ftyp_box(header_bytes)
+    elif ext == ".webm":
+        return len(header_bytes) >= 4 and header_bytes[:4] == b"\x1a\x45\xdf\xa3"
     elif ext == ".wav":
         if len(header_bytes) < 12:
             return False

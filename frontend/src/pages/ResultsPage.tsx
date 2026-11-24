@@ -4,6 +4,7 @@ import { apiRequest } from '../api/client';
 import { VerdictCard } from '../components/analysis/VerdictCard';
 import { EvidencePanel } from '../components/analysis/EvidencePanel';
 import { ActionItemsPanel } from '../components/analysis/ActionItemsPanel';
+import { AuditorFeedbackCard } from '../components/analysis/AuditorFeedbackCard';
 import { TranscriptViewer } from '../components/transcript/TranscriptViewer';
 import { SpeakerSwapModal } from '../components/transcript/SpeakerSwapModal';
 import { 
@@ -245,6 +246,12 @@ export const ResultsPage: React.FC = () => {
             repLabel={analysis.sales_rep?.label}
             limitedEvidenceReason={analysis.limited_evidence_reason}
             settingsSnapshot={analysis.settings_snapshot}
+          />
+          <AuditorFeedbackCard
+            callId={id!}
+            analysisId={analysis.id}
+            currentVerdict={analysis.verdict || 'GREEN'}
+            calibratedModel={analysis.calibrated_model}
           />
         </div>
       )}

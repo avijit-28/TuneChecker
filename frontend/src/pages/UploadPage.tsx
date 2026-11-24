@@ -9,7 +9,7 @@ export const UploadPage: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [languageMode, setLanguageMode] = useState<'hinglish' | 'english' | 'hindi' | 'auto'>('hinglish');
+  const [languageMode, setLanguageMode] = useState<'hinglish' | 'english' | 'hindi' | 'bengali' | 'auto'>('hinglish');
   const [settingsInfo, setSettingsInfo] = useState<{ version: number; sensitivity: string; criteriaCount: number } | null>(null);
 
   const navigate = useNavigate();
@@ -129,11 +129,12 @@ export const UploadPage: React.FC = () => {
             Select output dialect style
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
           {[
             { id: 'hinglish', label: '🌟 Hinglish', desc: 'Roman Hindi' },
             { id: 'english', label: '🇬🇧 English', desc: 'Standard / Translated' },
             { id: 'hindi', label: '🇮🇳 हिंदी', desc: 'Devanagari' },
+            { id: 'bengali', label: '🇧🇩 বাংলা', desc: 'Bengali' },
             { id: 'auto', label: '🌐 Auto', desc: 'Language Detect' },
           ].map((item) => (
             <button

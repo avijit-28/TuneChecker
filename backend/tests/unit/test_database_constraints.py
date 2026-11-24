@@ -82,3 +82,25 @@ def test_trigger_settings_versions_immutable(db):
         db.commit()
     assert "settings_versions rows cannot be deleted" in str(exc.value)
     db.rollback()
+
+def test_auditor_feedback_endpoints(client):
+    # Feedback train endpoint with low data
+    r_train = client.post("/api/v1/calls/feedback/train")
+    assert r_train.status_code == 200
+    res = r_train.json()
+    assert res["status"] in ("not_enough_data", "need_more_examples", "success")
+
+def test_speaker_alignment_pauses():
+    from app.pipeline.providers.stt.base import SttSegment
+    from app.pipeline.safeguards.speaker_alignment import align_segments_to_speakers
+
+    # 500ms pause should NOT switch speaker (stays with same speaker during breath pauses)
+    segs = [
+        SttSegment(id="1", text="Hello I am calling from software company", start_ms=0, end_ms=2000, words=[]),
+        SttSegment(id="2", text="and I wanted to show you our platform", start_ms=2500, end_ms=4500, words=[]), # 500ms pause
+        SttSegment(id="3", text="Who is this please?", start_ms=6000, end_ms=7500, words=[]), # 1500ms pause -> should alternate!
+    ]
+    aligned = align_segments_to_speakers(segs)
+    assert aligned[0].speaker_label == "A"
+    assert aligned[1].speaker_label == "A" # Kept as same speaker because pause <= 1200ms
+    assert aligned[2].speaker_label == "B" # Switched because pause > 1200ms

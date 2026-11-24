@@ -16,8 +16,9 @@ def align_segments_to_speakers(segments: list[SttSegment]) -> list[SttSegment]:
 
     for idx, seg in enumerate(segments):
         pause = seg.start_ms - last_end_ms
-        # If there is a distinct pause or change of turn
-        if idx > 0 and pause > 400:
+        # Turn-taking between speakers on phone calls typically occurs across pauses > 1200ms
+        # or when a speaker stops. Monologues with short breath pauses (< 1200ms) belong to the same speaker.
+        if idx > 0 and pause > 1200:
             current_speaker = "B" if current_speaker == "A" else "A"
 
         seg.speaker_label = current_speaker
