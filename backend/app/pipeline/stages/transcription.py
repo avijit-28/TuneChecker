@@ -23,8 +23,9 @@ def run_transcription_stage(db: Session, call_id: str) -> dict:
         provider = FasterWhisperProvider()
         stt_result = provider.transcribe(wav_path)
 
-    # Align utterances to preliminary speaker turns (A / B)
-    aligned_segments = align_segments_to_speakers(stt_result.segments)
+        # Align utterances to acoustic speaker turns (A / B)
+        aligned_segments = align_segments_to_speakers(stt_result.segments, wav_path=wav_path)
+
     speaker_labels = sorted(list({seg.speaker_label for seg in aligned_segments if seg.speaker_label}))
     if not speaker_labels:
         speaker_labels = ["A"]
