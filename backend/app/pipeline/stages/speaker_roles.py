@@ -94,7 +94,7 @@ def run_speaker_roles_stage(db: Session, call_id: str) -> dict:
             r.source = "auto"
             r.status = "confident" if llm_confidence in ["high", "medium"] else "uncertain"
             r.level = llm_confidence
-            r.factors = {"method": "hybrid_heuristic_llm", "cues": heuristic_cues[:2]}
+            r.factors = {"method": "hybrid_heuristic_llm", "cues": evidence_found[:2]}
         else:
             r.role = "customer"
             r.source = "auto"

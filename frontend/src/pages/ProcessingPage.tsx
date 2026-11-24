@@ -42,8 +42,8 @@ export const ProcessingPage: React.FC = () => {
 
         setStatusData(data);
 
-        // Terminal status: redirect to results
-        if (data.status === 'complete' || data.status === 'partial') {
+        // Terminal status: redirect to results only if complete or partial with finished analysis
+        if (data.status === 'complete' || (data.status === 'partial' && !data.failure)) {
           setTimeout(() => {
             navigate(`/calls/${id}`);
           }, 800);

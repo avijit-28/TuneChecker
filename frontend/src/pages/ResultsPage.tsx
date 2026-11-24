@@ -35,15 +35,27 @@ export const ResultsPage: React.FC = () => {
     setError(null);
 
     try {
-      const [detailRes, analysisRes, transcriptRes] = await Promise.all([
-        apiRequest<any>(`/calls/${id}`),
-        apiRequest<any>(`/calls/${id}/analysis`),
-        apiRequest<any>(`/calls/${id}/transcript`),
-      ]);
-
+      const detailRes = await apiRequest<any>(`/calls/${id}`);
       setCallDetail(detailRes);
-      setAnalysis(analysisRes);
-      setTranscript(transcriptRes);
+
+      // If call is still validating, transcribing, or failed before completion, redirect to processing stepper
+      if (detailRes.status !== 'complete' && !detailRes.latest_analysis) {
+        navigate(`/calls/${id}/processing`);
+        return;
+      }
+
+      try {
+        const [analysisRes, transcriptRes] = await Promise.all([
+          apiRequest<any>(`/calls/${id}/analysis`),
+          apiRequest<any>(`/calls/${id}/transcript`),
+        ]);
+
+        setAnalysis(analysisRes);
+        setTranscript(transcriptRes);
+      } catch {
+        navigate(`/calls/${id}/processing`);
+        return;
+      }
     } catch (err: any) {
       setError(err?.message || 'Failed to load call audit data.');
     } finally {
@@ -103,21 +115,38 @@ export const ResultsPage: React.FC = () => {
       <div style={{ maxWidth: '600px', margin: '40px auto', textAlign: 'center' }}>
         <h2 style={{ color: 'var(--error-fg)', marginBottom: '8px' }}>Failed to Load Analysis</h2>
         <p style={{ color: 'var(--color-text-secondary)', marginBottom: '20px' }}>{error}</p>
-        <button
-          type="button"
-          onClick={() => navigate('/history')}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '8px',
-            backgroundColor: 'var(--color-primary)',
-            color: 'var(--color-on-primary)',
-            border: 'none',
-            cursor: 'pointer',
-            fontWeight: 600,
-          }}
-        >
-          Return to History
-        </button>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={() => navigate(`/calls/${id}/processing`)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              backgroundColor: 'var(--color-primary)',
+              color: '#FFFFFF',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Check Progress & Retry
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/history')}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              backgroundColor: 'var(--color-surface-sunken)',
+              color: 'var(--color-text-secondary)',
+              border: '1px solid var(--color-border)',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Return to History
+          </button>
+        </div>
       </div>
     );
   }
