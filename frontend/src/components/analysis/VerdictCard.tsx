@@ -1,8 +1,8 @@
 import React from 'react';
-import { AlertOctagon, CheckCircle2, ShieldAlert, UserCheck } from 'lucide-react';
+import { AlertOctagon, CheckCircle2, AlertTriangle, ShieldAlert, UserCheck } from 'lucide-react';
 
 interface VerdictCardProps {
-  verdict: 'RED' | 'GREEN' | null;
+  verdict: 'RED' | 'GREEN' | 'NEEDS_REVIEW' | null;
   confidenceLevel: string;
   explanation: string;
   repLabel?: string | null;
@@ -20,22 +20,51 @@ export const VerdictCard: React.FC<VerdictCardProps> = ({
 }) => {
   const isRed = verdict === 'RED';
   const isGreen = verdict === 'GREEN';
+  const isNeedsReview = verdict === 'NEEDS_REVIEW';
 
   const badgeBg = isRed
     ? 'var(--tone-red-bg)'
     : isGreen
     ? 'var(--tone-green-bg)'
+    : isNeedsReview
+    ? 'var(--tone-amber-bg, #FEF3C7)'
     : 'var(--tone-none-bg)';
+
   const badgeFg = isRed
     ? 'var(--tone-red-fg)'
     : isGreen
     ? 'var(--tone-green-fg)'
+    : isNeedsReview
+    ? 'var(--tone-amber-fg, #B45309)'
     : 'var(--tone-none-solid)';
+
   const badgeBorder = isRed
     ? 'var(--tone-red-border)'
     : isGreen
     ? 'var(--tone-green-border)'
+    : isNeedsReview
+    ? 'var(--tone-amber-border, #FCD34D)'
     : 'var(--tone-none-border)';
+
+  const containerBorder = isRed
+    ? 'var(--tone-red-border)'
+    : isNeedsReview
+    ? 'var(--tone-amber-border, #FCD34D)'
+    : 'var(--color-border)';
+
+  const containerShadow = isRed
+    ? 'var(--shadow-md)'
+    : isNeedsReview
+    ? '0 1px 3px rgba(217, 119, 6, 0.12)'
+    : 'var(--shadow-sm)';
+
+  const verdictLabel = isRed
+    ? 'RED TONE VERDICT'
+    : isGreen
+    ? 'GREEN TONE VERDICT'
+    : isNeedsReview
+    ? 'NEEDS REVIEW TONE VERDICT'
+    : 'NOT ANALYZED';
 
   return (
     <div
@@ -43,8 +72,8 @@ export const VerdictCard: React.FC<VerdictCardProps> = ({
         backgroundColor: 'var(--color-surface)',
         borderRadius: '16px',
         padding: '24px',
-        border: `1px solid ${isRed ? 'var(--tone-red-border)' : 'var(--color-border)'}`,
-        boxShadow: isRed ? 'var(--shadow-md)' : 'var(--shadow-sm)',
+        border: `1px solid ${containerBorder}`,
+        boxShadow: containerShadow,
       }}
     >
       <div
@@ -73,8 +102,14 @@ export const VerdictCard: React.FC<VerdictCardProps> = ({
               letterSpacing: '0.04em',
             }}
           >
-            {isRed ? <AlertOctagon size={20} /> : isGreen ? <CheckCircle2 size={20} /> : null}
-            <span>{verdict ? `${verdict} TONE VERDICT` : 'NOT ANALYZED'}</span>
+            {isRed ? (
+              <AlertOctagon size={20} />
+            ) : isGreen ? (
+              <CheckCircle2 size={20} />
+            ) : isNeedsReview ? (
+              <AlertTriangle size={20} />
+            ) : null}
+            <span>{verdictLabel}</span>
           </div>
 
           <span
@@ -109,7 +144,11 @@ export const VerdictCard: React.FC<VerdictCardProps> = ({
         style={{
           padding: '16px',
           borderRadius: '10px',
-          backgroundColor: isRed ? 'rgba(180, 35, 24, 0.04)' : 'var(--color-surface-sunken)',
+          backgroundColor: isRed
+            ? 'rgba(180, 35, 24, 0.04)'
+            : isNeedsReview
+            ? 'rgba(217, 119, 6, 0.05)'
+            : 'var(--color-surface-sunken)',
           fontSize: '14px',
           lineHeight: 1.6,
           color: 'var(--color-text-primary)',

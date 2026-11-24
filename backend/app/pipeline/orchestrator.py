@@ -1,5 +1,6 @@
 import time
 import uuid
+import logging
 from datetime import datetime
 from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
@@ -13,6 +14,8 @@ from app.pipeline.stages.evidence_extraction import run_evidence_extraction_stag
 from app.pipeline.stages.action_items import run_action_items_stage
 from app.pipeline.stages.completion import run_completion_stage
 from app.utils.errors import AppError
+
+logger = logging.getLogger("tunechecker.pipeline")
 
 STAGES = [
     ("validation", run_validation_stage, "validating"),
@@ -63,15 +66,26 @@ def run_pipeline_for_call(call_id: str, start_stage: str = "validation"):
             db.add(stage_run)
             db.commit()
 
+            logger.info(
+                f"Stage '{stage_name}' started for call {call_id} (attempt {attempt})",
+                extra={"call_id": call_id, "stage": stage_name, "attempt": attempt, "stage_status": "started"}
+            )
+
             t0 = time.time()
             try:
                 res = stage_fn(db, call_id)
+                duration_ms = round((time.time() - t0) * 1000, 1)
                 stage_run.status = "succeeded"
                 stage_run.finished_at = datetime.utcnow()
                 stage_run.result_summary = res.get("message", "Stage completed successfully.")
                 db.commit()
+                logger.info(
+                    f"Stage '{stage_name}' succeeded for call {call_id} in {duration_ms}ms: {stage_run.result_summary}",
+                    extra={"call_id": call_id, "stage": stage_name, "attempt": attempt, "stage_status": "succeeded", "duration_ms": duration_ms}
+                )
             except Exception as e:
                 db.rollback()
+                duration_ms = round((time.time() - t0) * 1000, 1)
                 err_code = getattr(e, "code", "STAGE_FAILED")
                 err_msg = getattr(e, "message", str(e))
                 stage_run.status = "failed"
@@ -89,6 +103,10 @@ def run_pipeline_for_call(call_id: str, start_stage: str = "validation"):
                 has_transcript = db.query(Call).filter(Call.id == call_id).first().transcript is not None
                 call.status = "partial" if has_transcript and stage_name != "transcription" else "failed"
                 db.commit()
+                logger.error(
+                    f"Stage '{stage_name}' failed for call {call_id} in {duration_ms}ms with {err_code}: {err_msg}",
+                    extra={"call_id": call_id, "stage": stage_name, "attempt": attempt, "stage_status": "failed", "error_code": err_code, "duration_ms": duration_ms}
+                )
                 return
 
     finally:

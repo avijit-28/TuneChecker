@@ -16,7 +16,7 @@ export interface EvidenceItemData {
 
 interface EvidencePanelProps {
   evidence: EvidenceItemData[];
-  onSelectEvidence?: (utteranceId: string) => void;
+  onSelectEvidence?: (utteranceId: string, quote?: string) => void;
   selectedUtteranceId?: string | null;
 }
 
@@ -69,7 +69,7 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({
             return (
               <div
                 key={ev.id}
-                onClick={() => onSelectEvidence && onSelectEvidence(ev.utterance_id)}
+                onClick={() => onSelectEvidence && onSelectEvidence(ev.utterance_id, ev.quote)}
                 style={{
                   padding: '14px',
                   borderRadius: '8px',

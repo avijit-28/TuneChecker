@@ -5,6 +5,7 @@ import {
   UploadCloud, 
   CheckCircle2, 
   AlertOctagon, 
+  AlertTriangle,
   Clock, 
   ArrowRight,
   User,
@@ -314,6 +315,23 @@ export const DashboardPage: React.FC = () => {
                           }}
                         >
                           GREEN
+                        </span>
+                      ) : c.tone === 'NEEDS_REVIEW' ? (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '3px 8px',
+                            borderRadius: '10px',
+                            backgroundColor: 'var(--tone-amber-bg, #FEF3C7)',
+                            color: 'var(--tone-amber-fg, #B45309)',
+                            border: '1px solid var(--tone-amber-border, #FCD34D)',
+                            fontWeight: 700,
+                            fontSize: '11px',
+                          }}
+                        >
+                          <AlertTriangle size={11} /> NEEDS REVIEW
                         </span>
                       ) : (
                         <span

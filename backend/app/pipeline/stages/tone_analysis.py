@@ -116,7 +116,8 @@ def run_tone_stage(db: Session, call_id: str) -> dict:
         enabled_criteria_ids=enabled_criteria,
         sensitivity=sensitivity,
         rep_total_seconds=rep_total_sec,
-        role_level=rep_role.level or "medium"
+        role_level=rep_role.level or "medium",
+        role_status=rep_role.status or "resolved"
     )
 
     analysis_id = str(uuid.uuid4())

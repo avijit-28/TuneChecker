@@ -2,7 +2,7 @@ import os
 import uuid
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, Response, status
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, FileResponse
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.services.call_service import CallService
@@ -89,7 +89,7 @@ def list_calls(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     q: Optional[str] = Query(None, max_length=100),
-    tone: Optional[str] = Query(None, pattern="^(red|green|none)$"),
+    tone: Optional[str] = Query(None, pattern="^(red|green|needs_review|none)$"),
     status: Optional[str] = Query(None, pattern="^(in_progress|complete|partial|failed)$"),
     sort: str = Query("newest", pattern="^(newest|oldest)$"),
     db: Session = Depends(get_db)
@@ -133,6 +133,16 @@ def get_call_analysis(call_id: str, db: Session = Depends(get_db)):
 @router.get("/{call_id}/report")
 def get_call_report(call_id: str, db: Session = Depends(get_db)):
     return CallService.get_call_report(db, call_id)
+
+@router.get("/{call_id}/audio")
+def stream_call_audio(call_id: str, db: Session = Depends(get_db)):
+    audio_path, media_type = CallService.get_audio_file(db, call_id)
+    return FileResponse(
+        path=str(audio_path),
+        media_type=media_type,
+        content_disposition_type="inline",
+        headers={"Accept-Ranges": "bytes"}
+    )
 
 @router.put("/{call_id}/speaker-roles", status_code=status.HTTP_202_ACCEPTED)
 def update_speaker_roles(call_id: str, payload: dict, db: Session = Depends(get_db)):

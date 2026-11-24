@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../api/client';
-import { Search, AlertOctagon, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Search, AlertOctagon, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
 
 interface CallListItemData {
   id: string;
   name: string;
   status: string;
   status_group: string;
-  tone: 'RED' | 'GREEN' | null;
+  tone: 'RED' | 'GREEN' | 'NEEDS_REVIEW' | null;
   duration_ms: number | null;
   size_bytes: number;
   is_synthetic: boolean;
@@ -19,7 +19,7 @@ export const HistoryPage: React.FC = () => {
   const [calls, setCalls] = useState<CallListItemData[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [toneFilter, setToneFilter] = useState<'all' | 'red' | 'green' | 'none'>('all');
+  const [toneFilter, setToneFilter] = useState<'all' | 'red' | 'green' | 'needs_review' | 'none'>('all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -94,12 +94,13 @@ export const HistoryPage: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {(['all', 'red', 'green', 'none'] as const).map((filter) => {
+          {(['all', 'red', 'green', 'needs_review', 'none'] as const).map((filter) => {
             const isSelected = toneFilter === filter;
             const labels: Record<string, string> = {
               all: 'All Calls',
               red: 'RED Verdicts',
               green: 'GREEN Verdicts',
+              needs_review: 'NEEDS REVIEW',
               none: 'Not Analyzed',
             };
             return (
@@ -267,6 +268,23 @@ export const HistoryPage: React.FC = () => {
                           }}
                         >
                           <CheckCircle2 size={13} /> GREEN
+                        </span>
+                      ) : c.tone === 'NEEDS_REVIEW' ? (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '3px 10px',
+                            borderRadius: '12px',
+                            backgroundColor: 'var(--tone-amber-bg, #FEF3C7)',
+                            color: 'var(--tone-amber-fg, #B45309)',
+                            border: '1px solid var(--tone-amber-border, #FCD34D)',
+                            fontWeight: 700,
+                            fontSize: '11px',
+                          }}
+                        >
+                          <AlertTriangle size={13} /> NEEDS REVIEW
                         </span>
                       ) : (
                         <span

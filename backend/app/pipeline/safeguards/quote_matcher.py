@@ -57,7 +57,10 @@ def find_quote_offsets(utterance_text: str, quote: str) -> Optional[tuple[int, i
     return None
 
 def verify_evidence_quote(utterance_text: str, quote: str, char_start: int, char_end: int) -> bool:
-    """Verifies that char_start and char_end form a valid non-empty span within utterance_text."""
+    """Verifies that char_start and char_end form a valid non-empty span within utterance_text matching quote."""
     if char_start < 0 or char_end > len(utterance_text) or char_start >= char_end:
         return False
-    return len(utterance_text[char_start:char_end].strip()) > 0
+    span = utterance_text[char_start:char_end]
+    if len(span.strip()) == 0:
+        return False
+    return span == quote

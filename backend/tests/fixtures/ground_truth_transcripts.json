@@ -1,0 +1,39 @@
+{
+  "green_call_01": {
+    "filename": "green_call_01.m4a",
+    "expected_verdict": "GREEN",
+    "expected_rep_speaker": "A",
+    "expected_evidence_count": 0,
+    "expected_action_items_count": 1,
+    "expected_commitment_task": "Send you the updated quote and implementation timeline",
+    "expected_commitment_deadline": "Friday"
+  },
+  "red_call_01": {
+    "filename": "red_call_01.m4a",
+    "expected_verdict": "RED",
+    "expected_rep_speaker": "A",
+    "expected_evidence_count": 3,
+    "expected_violating_quotes": [
+      "Are you kidding me",
+      "That is ridiculous",
+      "not my problem"
+    ]
+  },
+  "customer_anger_immunity": {
+    "description": "Customer is aggressive and profane, sales representative remains calm and de-escalates",
+    "expected_verdict": "GREEN",
+    "expected_evidence_count": 0,
+    "customer_hostile_phrases": [
+      "complete garbage",
+      "total idiots",
+      "shut up"
+    ]
+  },
+  "mpeg_sample_01": {
+    "filename": "media_1795518777984_fae6b537.mpeg",
+    "expected_duration_sec_range": [110.0, 120.0],
+    "expected_sample_rate": 16000,
+    "expected_channels": 1,
+    "expected_container": "mp3"
+  }
+}

@@ -1,8 +1,14 @@
 import os
 import shutil
+from pathlib import Path
 from typing import Optional
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, field_validator
+
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_DATA_DIR = BACKEND_DIR / "data"
+DEFAULT_DB_PATH = DEFAULT_DATA_DIR / "app.db"
+DEFAULT_STORAGE_PATH = DEFAULT_DATA_DIR / "audio"
 
 def resolve_binary(name: str) -> str:
     # If it's already an existing executable path, return it
@@ -31,11 +37,31 @@ class Settings(BaseSettings):
     LOG_PROMPTS: bool = False
     
     # Database
-    DATABASE_URL: str = "sqlite:///./data/app.db"
+    DATABASE_URL: str = f"sqlite:///{DEFAULT_DB_PATH.as_posix()}"
     
     # Storage
     STORAGE_TYPE: str = "local"
-    STORAGE_LOCAL_PATH: str = "./data/audio"
+    STORAGE_LOCAL_PATH: str = str(DEFAULT_STORAGE_PATH)
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        if v and v.startswith("sqlite:///"):
+            path_part = v[len("sqlite:///"):]
+            path_obj = Path(path_part)
+            if not path_obj.is_absolute():
+                abs_path = (BACKEND_DIR / path_part).resolve()
+                return f"sqlite:///{abs_path.as_posix()}"
+        return v
+
+    @field_validator("STORAGE_LOCAL_PATH", mode="before")
+    @classmethod
+    def normalize_storage_path(cls, v: str) -> str:
+        if v:
+            path_obj = Path(v)
+            if not path_obj.is_absolute():
+                return str((BACKEND_DIR / v).resolve())
+        return v
     
     # Upload limits
     MAX_UPLOAD_SIZE_MB: int = 50
@@ -91,8 +117,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
     HUGGINGFACE_TOKEN: Optional[str] = None
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    model_config = SettingsConfigDict(
+        env_file=BACKEND_DIR / ".env",
+        extra="ignore"
+    )
 
 settings = Settings()

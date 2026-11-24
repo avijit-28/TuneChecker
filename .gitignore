@@ -27,7 +27,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # Models & temp audio
-models/
+/models/
+backend/data/models/
 storage/audio/*
 !storage/audio/.gitkeep
 temp/

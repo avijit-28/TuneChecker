@@ -1,5 +1,7 @@
 import os
 import uuid
+import mimetypes
+from pathlib import Path
 from datetime import datetime
 from typing import Optional, Any
 from sqlalchemy.orm import Session
@@ -9,7 +11,7 @@ from app.db.models.stage_runs import StageRun
 from app.db.models.transcripts import Transcript
 from app.db.models.speaker_roles import SpeakerRole
 from app.db.models.utterances import Utterance
-from app.db.models.analyses import Analysis, EvidenceItem, ActionItem
+from app.db.models.analyses import Analysis, EvidenceItem, ActionItem, CoachingRecommendation
 from app.db.models.settings import SettingsVersion
 from app.config import settings
 from app.utils.errors import AppError
@@ -80,7 +82,7 @@ class CallService:
                 tone_upper = tone.upper()
                 if tone == "none" and call_tone is not None:
                     continue
-                elif tone_upper in ("RED", "GREEN") and call_tone != tone_upper:
+                elif tone_upper in ("RED", "GREEN", "NEEDS_REVIEW") and call_tone != tone_upper:
                     continue
 
             items.append({
@@ -372,10 +374,34 @@ class CallService:
                 },
                 "deadline": a.deadline_text,
                 "quote": a.quote,
+                "char_start": a.char_start,
+                "char_end": a.char_end,
                 "utterance_id": a.utterance_id,
                 "start_ms": start_ms
             }
             for a, start_ms in action_items
+        ]
+
+        coaching_items = (
+            db.query(CoachingRecommendation, Utterance.start_ms)
+            .outerjoin(Utterance, CoachingRecommendation.utterance_id == Utterance.id)
+            .filter(CoachingRecommendation.analysis_id == analysis.id)
+            .order_by(CoachingRecommendation.ref.asc())
+            .all()
+        )
+        coaching_list = [
+            {
+                "id": c.id,
+                "ref": c.ref,
+                "category": c.category,
+                "recommendation": c.recommendation,
+                "context_quote": c.context_quote,
+                "severity": c.severity,
+                "utterance_id": c.utterance_id,
+                "start_ms": start_ms,
+                "created_at": c.created_at
+            }
+            for c, start_ms in coaching_items
         ]
 
         # Fetch settings snapshot
@@ -421,6 +447,7 @@ class CallService:
             "sales_rep": sales_rep_dict,
             "evidence": evidence_list,
             "action_items": action_list,
+            "coaching_recommendations": coaching_list,
             "settings_snapshot": settings_snapshot,
             "created_at": analysis.created_at
         }
@@ -487,6 +514,7 @@ class CallService:
         
         red_count = 0
         green_count = 0
+        needs_review_count = 0
         awaiting = 0
         failed = 0
 
@@ -507,8 +535,10 @@ class CallService:
                 red_count += 1
             elif latest and latest.verdict == "GREEN":
                 green_count += 1
+            elif latest and latest.verdict == "NEEDS_REVIEW":
+                needs_review_count += 1
 
-        total_analyzed = red_count + green_count
+        total_analyzed = red_count + green_count + needs_review_count
         not_analyzed = total_calls - total_analyzed
 
         recent_call_rows, _ = CallService.list_calls(db, page=1, page_size=5)
@@ -542,12 +572,14 @@ class CallService:
                 "total_analyzed": total_analyzed,
                 "red": red_count,
                 "green": green_count,
+                "needs_review": needs_review_count,
                 "awaiting_analysis": awaiting,
                 "needs_attention": failed
             },
             "tone_distribution": {
                 "red": red_count,
                 "green": green_count,
+                "needs_review": needs_review_count,
                 "not_analyzed": not_analyzed
             },
             "recent_calls": recent_call_rows,
@@ -631,3 +663,40 @@ class CallService:
                 "calibrator_status": "Calibrated (Macro-F1: 1.000)",
             }
         }
+
+    @staticmethod
+    def get_audio_file(db: Session, call_id: str) -> tuple[Path, str]:
+        c = db.query(Call).filter(Call.id == call_id).first()
+        if not c:
+            raise AppError("CALL_NOT_FOUND", f"Call with ID '{call_id}' not found.", 404)
+        if not c.storage_key or c.audio_deleted_at is not None:
+            raise AppError("AUDIO_DELETED", f"Audio for call '{call_id}' has been removed or deleted.", 404)
+
+        audio_path = Path(settings.STORAGE_LOCAL_PATH) / c.storage_key
+        if not audio_path.exists() or not audio_path.is_file():
+            raise AppError("AUDIO_FILE_NOT_FOUND", f"Audio file '{c.storage_key}' for call '{call_id}' not found on storage.", 404)
+
+        ext = audio_path.suffix.lower()
+        mime_map = {
+            ".wav": "audio/wav",
+            ".mp3": "audio/mpeg",
+            ".m4a": "audio/mp4",
+            ".mp4": "audio/mp4",
+            ".mpeg": "audio/mpeg",
+            ".mpg": "audio/mpeg",
+            ".webm": "audio/webm",
+            ".ogg": "audio/ogg",
+            ".flac": "audio/flac",
+            ".aac": "audio/aac",
+        }
+        media_type = mime_map.get(ext)
+        if not media_type:
+            guessed, _ = mimetypes.guess_type(str(audio_path))
+            if guessed and guessed.startswith("video/"):
+                media_type = guessed.replace("video/", "audio/")
+            elif guessed and guessed.startswith("audio/"):
+                media_type = guessed
+            else:
+                media_type = "audio/wav"
+
+        return audio_path, media_type

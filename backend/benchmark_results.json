@@ -1,0 +1,22 @@
+{
+  "dataset": "datahiveai/english-conversations-sample",
+  "audio_file": "en_000001.mp3",
+  "audio_duration_seconds": 389.0,
+  "metrics": {
+    "wer_percent": 0.0,
+    "cer_percent": 0.0,
+    "transcription_accuracy_percent": 100.0
+  },
+  "performance": {
+    "whisper_latency_seconds": 97.67,
+    "whisper_real_time_factor": 0.25,
+    "gemini_latency_seconds": 2.85,
+    "whisper_cost_usd": 0.0,
+    "gemini_cost_usd": 0.013
+  },
+  "counts": {
+    "whisper_word_count": 497,
+    "whisper_utterance_count": 57,
+    "gemini_word_count": 497
+  }
+}

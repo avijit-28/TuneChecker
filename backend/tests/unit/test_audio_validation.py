@@ -136,10 +136,13 @@ def test_validate_audio_file_silent(tmp_path: Path):
 
 
 def test_validate_audio_file_real_sample():
-    sample_path = Path("../samples/red_call_01.m4a")
-    if not sample_path.exists():
-        sample_path = Path("samples/red_call_01.m4a")
-    if not sample_path.exists():
+    candidates = [
+        Path(__file__).resolve().parents[3] / "samples" / "red_call_01.m4a",
+        Path("../samples/red_call_01.m4a"),
+        Path("samples/red_call_01.m4a"),
+    ]
+    sample_path = next((p for p in candidates if p.exists()), None)
+    if not sample_path:
         pytest.skip("Sample red_call_01.m4a not found")
 
     result = validate_audio_file(sample_path)

@@ -34,6 +34,8 @@
   --tone-red-fg: #B42318;      --tone-red-bg: #FEF3F2;   --tone-red-border: #FDA29B;
   --tone-green-solid: #067647; --tone-green-on-solid: #FFFFFF;
   --tone-green-fg: #067647;    --tone-green-bg: #ECFDF3; --tone-green-border: #75E0A7;
+  --tone-amber-solid: #D97706; --tone-amber-on-solid: #FFFFFF;
+  --tone-amber-fg: #B45309;    --tone-amber-bg: #FEF3C7; --tone-amber-border: #FCD34D;
   --tone-none-solid: #5B6678;  --tone-none-bg: #EEF1F5;  --tone-none-border: #C9D0DD;
 
   /* System states */
@@ -84,6 +86,8 @@
   --tone-red-fg: #FDA29B;      --tone-red-bg: #2D1210;   --tone-red-border: #7A2E26;
   --tone-green-solid: #32D583; --tone-green-on-solid: #04170D;
   --tone-green-fg: #6CE9A6;    --tone-green-bg: #0C2417; --tone-green-border: #1C5A3A;
+  --tone-amber-solid: #F59E0B; --tone-amber-on-solid: #1C1204;
+  --tone-amber-fg: #FBBF24;    --tone-amber-bg: #2B1D07; --tone-amber-border: #78350F;
   --tone-none-solid: #8E98AE;  --tone-none-bg: #1D2436;  --tone-none-border: #3D4663;
 
   --success-fg: #5EC9E0; --success-bg: #0A2630; --success-border: #155E75;

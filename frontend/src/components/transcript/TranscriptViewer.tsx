@@ -19,14 +19,26 @@ interface TranscriptViewerProps {
   utterances: UtteranceItem[];
   speakers: SpeakerInfo[];
   highlightedUtteranceId?: string | null;
+  activeUtteranceId?: string | null;
   onChangeRolesClick?: () => void;
+  onSeekToUtterance?: (utterance: UtteranceItem) => void;
+  onPlayFromTimestamp?: (timeSec: number) => void;
+  autoScroll?: boolean;
+  onToggleAutoScroll?: () => void;
+  activeQuote?: string | null;
 }
 
 export const TranscriptViewer: React.FC<TranscriptViewerProps> = ({
   utterances,
   speakers,
   highlightedUtteranceId,
+  activeUtteranceId,
   onChangeRolesClick,
+  onSeekToUtterance,
+  onPlayFromTimestamp,
+  autoScroll,
+  onToggleAutoScroll,
+  activeQuote,
 }) => {
   const [search, setSearch] = useState('');
 
@@ -98,6 +110,29 @@ export const TranscriptViewer: React.FC<TranscriptViewerProps> = ({
               }}
             />
           </div>
+
+          {onToggleAutoScroll && (
+            <button
+              type="button"
+              onClick={onToggleAutoScroll}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                border: `1px solid ${autoScroll ? 'var(--color-primary-border)' : 'var(--color-border)'}`,
+                backgroundColor: autoScroll ? 'var(--color-primary-subtle)' : 'var(--color-surface)',
+                color: autoScroll ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+              title="Toggle automatic transcript scrolling during audio playback"
+            >
+              Auto-scroll: {autoScroll ? 'ON' : 'OFF'}
+            </button>
+          )}
 
           {onChangeRolesClick && (
             <button
@@ -183,7 +218,11 @@ export const TranscriptViewer: React.FC<TranscriptViewerProps> = ({
               speakerRole={role}
               isRep={isRep}
               isHighlighted={highlightedUtteranceId === u.id}
+              activeQuote={highlightedUtteranceId === u.id ? activeQuote : null}
+              isPlaying={activeUtteranceId === u.id}
               searchQuery={search}
+              onSelect={() => onSeekToUtterance?.(u)}
+              onPlayFromTimestamp={onPlayFromTimestamp}
             />
           );
         })}

@@ -104,3 +104,81 @@ def test_speaker_alignment_pauses():
     assert aligned[0].speaker_label == "A"
     assert aligned[1].speaker_label == "A" # Kept as same speaker because pause <= 1200ms
     assert aligned[2].speaker_label == "B" # Switched because pause > 1200ms
+
+def test_analysis_verdict_constraints(db):
+    import uuid
+    from app.db.models.calls import Call
+    from app.db.models.analyses import Analysis
+
+    call_id = f"test-call-{uuid.uuid4().hex[:8]}"
+    test_call = Call(
+        id=call_id,
+        original_filename="test.mp3",
+        storage_key="test.mp3",
+        size_bytes=1000,
+        duration_ms=20000,
+        status="uploaded"
+    )
+    db.add(test_call)
+    db.commit()
+
+    try:
+        # Test 1: NEEDS_REVIEW is permitted
+        a_review = Analysis(
+            id=f"analysis-{uuid.uuid4().hex[:8]}",
+            call_id=call_id,
+            run_number=1,
+            settings_version=1,
+            status="complete",
+            verdict="NEEDS_REVIEW",
+            confidence_level="medium",
+            explanation="Uncertain tone evidence requires human review."
+        )
+        db.add(a_review)
+        db.commit()
+        assert a_review.verdict == "NEEDS_REVIEW"
+
+        # Test 2: GREEN and RED and None are permitted
+        a_green = Analysis(
+            id=f"analysis-{uuid.uuid4().hex[:8]}",
+            call_id=call_id,
+            run_number=2,
+            settings_version=1,
+            status="complete",
+            verdict="GREEN"
+        )
+        db.add(a_green)
+        db.commit()
+        assert a_green.verdict == "GREEN"
+
+        a_none = Analysis(
+            id=f"analysis-{uuid.uuid4().hex[:8]}",
+            call_id=call_id,
+            run_number=3,
+            settings_version=1,
+            status="partial",
+            verdict=None
+        )
+        db.add(a_none)
+        db.commit()
+        assert a_none.verdict is None
+
+        # Test 3: Invalid verdict raises IntegrityError
+        a_bad = Analysis(
+            id=f"analysis-{uuid.uuid4().hex[:8]}",
+            call_id=call_id,
+            run_number=4,
+            settings_version=1,
+            status="complete",
+            verdict="INVALID_VERDICT"
+        )
+        db.add(a_bad)
+        with pytest.raises(Exception) as exc:
+            db.commit()
+        assert "ck_analyses_verdict" in str(exc.value) or "CHECK constraint failed" in str(exc.value)
+        db.rollback()
+
+    finally:
+        db.query(Analysis).filter(Analysis.call_id == call_id).delete()
+        db.query(Call).filter(Call.id == call_id).delete()
+        db.commit()

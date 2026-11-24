@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../api/client';
 import { VerdictCard } from '../components/analysis/VerdictCard';
@@ -8,6 +8,7 @@ import { AuditorFeedbackCard } from '../components/analysis/AuditorFeedbackCard'
 import { AudioQualityReportCard, type AudioReportData } from '../components/analysis/AudioQualityReportCard';
 import { TranscriptViewer } from '../components/transcript/TranscriptViewer';
 import { SpeakerSwapModal } from '../components/transcript/SpeakerSwapModal';
+import { AudioPlayer, type AudioPlayerRef } from '../components/audio/AudioPlayer';
 import { 
   Download, 
   Trash2, 
@@ -29,9 +30,16 @@ export const ResultsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [highlightedUtteranceId, setHighlightedUtteranceId] = useState<string | null>(null);
+  const [activeQuote, setActiveQuote] = useState<string | null>(null);
+  const [activeUtteranceId, setActiveUtteranceId] = useState<string | null>(null);
+  const [autoScroll, setAutoScroll] = useState<boolean>(true);
+  const [, setIsPlaying] = useState<boolean>(false);
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
 
-  const fetchData = async () => {
+  const audioPlayerRef = useRef<AudioPlayerRef | null>(null);
+  const prevActiveIdRef = useRef<string | null>(null);
+
+  const fetchData = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     setError(null);
@@ -40,8 +48,8 @@ export const ResultsPage: React.FC = () => {
       const detailRes = await apiRequest<any>(`/calls/${id}`);
       setCallDetail(detailRes);
 
-      // If call is still validating, transcribing, or failed before completion, redirect to processing stepper
-      if (detailRes.status !== 'complete' && !detailRes.latest_analysis) {
+      // If call is still validating, transcribing, analyzing, or re-running, redirect to processing stepper
+      if (detailRes.status !== 'complete') {
         navigate(`/calls/${id}/processing`);
         return;
       }
@@ -56,26 +64,74 @@ export const ResultsPage: React.FC = () => {
         setAnalysis(analysisRes);
         setTranscript(transcriptRes);
         setReport(reportRes);
-      } catch {
-        navigate(`/calls/${id}/processing`);
-        return;
+      } catch (innerErr: any) {
+        // If analysis is still being calculated or re-queued (409 Conflict), gracefully redirect to processing stepper
+        if (
+          innerErr?.statusCode === 409 || 
+          innerErr?.status === 409 || 
+          innerErr?.message?.toLowerCase().includes('not ready')
+        ) {
+          navigate(`/calls/${id}/processing`);
+          return;
+        }
+        throw innerErr;
       }
     } catch (err: any) {
       setError(err?.message || 'Failed to load call audit data.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
 
   useEffect(() => {
     fetchData();
-  }, [id]);
+  }, [fetchData]);
 
-  const handleSelectEvidenceOrAction = (utteranceId: string) => {
+  // Handle audio time update & active utterance synchronization
+  const handleTimeUpdate = (timeMs: number) => {
+    if (!transcript?.utterances) return;
+    const roundedMs = Math.round(timeMs);
+    const active = transcript.utterances.find(
+      (u: any) => roundedMs >= u.start_ms && roundedMs <= u.end_ms
+    );
+    setActiveUtteranceId(active ? active.id : null);
+  };
+
+  // Smoothly scroll active utterance into view when activeUtteranceId changes
+  useEffect(() => {
+    if (!autoScroll || !activeUtteranceId) return;
+    if (prevActiveIdRef.current === activeUtteranceId) return;
+    prevActiveIdRef.current = activeUtteranceId;
+    const el = document.getElementById(`utt-${activeUtteranceId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [activeUtteranceId, autoScroll]);
+
+  const handleSelectEvidenceOrAction = (utteranceId: string, quote?: string) => {
     setHighlightedUtteranceId(utteranceId);
+    setActiveQuote(quote || null);
+    const utt = transcript?.utterances?.find((u: any) => u.id === utteranceId);
+    if (utt && audioPlayerRef.current) {
+      audioPlayerRef.current.seekTo(utt.start_ms / 1000, true);
+    }
     const element = document.getElementById(`utt-${utteranceId}`);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  const handleSeekToUtterance = (utterance: any) => {
+    setHighlightedUtteranceId(utterance.id);
+    setActiveQuote(null);
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.seekTo(utterance.start_ms / 1000, true);
+    }
+  };
+
+  const handlePlayFromTimestamp = (timeSec: number) => {
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.seekTo(timeSec, true);
     }
   };
 
@@ -269,6 +325,19 @@ export const ResultsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Synchronized Audio Player */}
+      <div style={{ marginBottom: '24px' }}>
+        <AudioPlayer
+          ref={audioPlayerRef}
+          callId={id!}
+          durationMs={callDetail?.duration_ms}
+          onTimeUpdate={handleTimeUpdate}
+          onPlayStateChange={setIsPlaying}
+          autoScroll={autoScroll}
+          onToggleAutoScroll={() => setAutoScroll((prev) => !prev)}
+        />
+      </div>
+
       {/* Verdict Card */}
       {analysis && (
         <div style={{ marginBottom: '24px' }}>
@@ -311,6 +380,7 @@ export const ResultsPage: React.FC = () => {
               />
               <ActionItemsPanel
                 actionItems={analysis.action_items || []}
+                coachingRecommendations={analysis.coaching_recommendations || []}
                 onSelectAction={handleSelectEvidenceOrAction}
                 selectedUtteranceId={highlightedUtteranceId}
               />
@@ -325,7 +395,13 @@ export const ResultsPage: React.FC = () => {
               utterances={transcript.utterances || []}
               speakers={transcript.speakers || []}
               highlightedUtteranceId={highlightedUtteranceId}
+              activeQuote={activeQuote}
+              activeUtteranceId={activeUtteranceId}
               onChangeRolesClick={() => setIsSwapModalOpen(true)}
+              onSeekToUtterance={handleSeekToUtterance}
+              onPlayFromTimestamp={handlePlayFromTimestamp}
+              autoScroll={autoScroll}
+              onToggleAutoScroll={() => setAutoScroll((prev) => !prev)}
             />
           )}
         </div>

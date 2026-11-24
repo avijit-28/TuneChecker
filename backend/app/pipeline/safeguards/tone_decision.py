@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import Any, Optional
 from app.pipeline.safeguards.quote_matcher import find_quote_offsets
 
 def evaluate_tone_verdict(
@@ -8,12 +8,19 @@ def evaluate_tone_verdict(
     enabled_criteria_ids: set[str],
     sensitivity: str,
     rep_total_seconds: float,
-    role_level: str
+    role_level: str,
+    role_status: str = "resolved",
+    partial_non_compliance: bool = False,
+    confidence: Optional[float] = None
 ) -> dict[str, Any]:
     """
-    Evaluates verified tone evidence items and determines final RED / GREEN verdict.
-    Strictly follows PRD FR-T1..FR-T7 and AGENTS.md Section 5.
-    Combines LLM findings with deterministic tone safeguard patterns.
+    Evaluates verified tone evidence items and determines final RED / GREEN / NEEDS_REVIEW verdict.
+    Strictly follows PRD FR-T1..FR-T7, Milestone 3 specifications, and AGENTS.md Section 5.
+    Customer speech immunity is strictly maintained: customer hostility or profanity never triggers RED.
+    Assigns NEEDS_REVIEW when:
+      a) Confidence is low (< 0.70) or limited_evidence_reason is set (e.g. rep_total_seconds < 15s or low role confidence), OR
+      b) Mixed/borderline indicators exist (e.g. dropped candidate findings due to ambiguous attribution, or borderline severe violations), OR
+      c) Rep behavior has partial non-compliance without reaching definitive RED threshold.
     """
     rep_utt_map = {u["id"]: u for u in rep_utterances}
     verified_evidence = []
@@ -116,22 +123,7 @@ def evaluate_tone_verdict(
     # Filter by sensitivity threshold
     qualifying_evidence = [e for e in verified_evidence if e["severity"] >= required_severity]
 
-    # Decide verdict
-    if qualifying_evidence:
-        verdict = "RED"
-        matched_criteria = ", ".join(sorted({e["criterion_id"].capitalize() for e in qualifying_evidence}))
-        explanation = (
-            f"The sales representative exhibited unprofessional behavior matching the configured criteria "
-            f"({matched_criteria}) at {sensitivity.capitalize()} sensitivity, supported by {len(qualifying_evidence)} "
-            f"verified transcript evidence quote(s)."
-        )
-    else:
-        verdict = "GREEN"
-        explanation = (
-            f"No negative sales representative tone detected under the configured criteria at {sensitivity.capitalize()} sensitivity."
-        )
-
-    # Compute confidence level
+    # Compute confidence level & limited evidence reason
     limited_evidence_reason = None
     if rep_total_seconds < 15:
         confidence_level = "low"
@@ -139,17 +131,84 @@ def evaluate_tone_verdict(
     elif role_level == "low":
         confidence_level = "low"
         limited_evidence_reason = "Speaker role attribution has low confidence."
+    elif role_status in ("uncertain", "unresolved"):
+        confidence_level = "low"
+        limited_evidence_reason = f"Speaker role assignment is {role_status}."
+    elif confidence is not None and confidence < 0.70:
+        confidence_level = "low"
+        limited_evidence_reason = f"Evaluation confidence is low ({confidence:.2f} < 0.70)."
     elif rep_total_seconds < 35:
         confidence_level = "medium"
     else:
         confidence_level = "high"
 
+    # Evaluate borderline / mixed indicators
+    has_mixed_indicators = any(
+        f.get("ambiguous_attribution") or f.get("borderline") or f.get("mixed_indicators") or f.get("requires_supervisory_check")
+        for f in candidate_findings
+    ) or any(
+        f.get("dropped_reason") == "ambiguous_attribution" for f in candidate_findings
+    )
+
+    # Evaluate partial non-compliance
+    has_partial_non_compliance = partial_non_compliance or any(
+        f.get("partial_non_compliance") for f in candidate_findings
+    )
+
+    # Determine final verdict
+    if qualifying_evidence:
+        matched_criteria = ", ".join(sorted({e["criterion_id"].capitalize() for e in qualifying_evidence}))
+        if confidence_level == "low" or limited_evidence_reason:
+            verdict = "NEEDS_REVIEW"
+            explanation = (
+                f"Potential tone violations detected ({matched_criteria}), but evaluation confidence is low "
+                f"({limited_evidence_reason or 'confidence < 0.70'}). Supervisory review required to confirm speaker attribution and context."
+            )
+        elif has_mixed_indicators:
+            verdict = "NEEDS_REVIEW"
+            explanation = (
+                f"Tone violations detected ({matched_criteria}), but mixed or borderline attribution indicators exist. "
+                f"Supervisory review required."
+            )
+        else:
+            verdict = "RED"
+            explanation = (
+                f"The sales representative exhibited unprofessional behavior matching the configured criteria "
+                f"({matched_criteria}) at {sensitivity.capitalize()} sensitivity, supported by {len(qualifying_evidence)} "
+                f"verified transcript evidence quote(s)."
+            )
+    elif confidence_level == "low" or limited_evidence_reason:
+        verdict = "NEEDS_REVIEW"
+        explanation = (
+            f"No negative representative tone detected, but evaluation confidence is low "
+            f"({limited_evidence_reason or 'confidence < 0.70'}). Human supervisory check recommended."
+        )
+    elif has_mixed_indicators:
+        verdict = "NEEDS_REVIEW"
+        explanation = (
+            "Candidate tone concerns or mixed/borderline indicators were identified by the evaluation engine, "
+            "requiring human supervisory check to assess conversation context."
+        )
+    elif has_partial_non_compliance:
+        verdict = "NEEDS_REVIEW"
+        explanation = (
+            f"Representative behavior exhibited partial non-compliance below the definitive RED threshold "
+            f"for {sensitivity.capitalize()} sensitivity. Manager review recommended."
+        )
+    else:
+        verdict = "GREEN"
+        explanation = (
+            f"No negative sales representative tone detected under the configured criteria at {sensitivity.capitalize()} sensitivity."
+        )
+
+    # Return structured decision
     return {
         "verdict": verdict,
         "confidence_level": confidence_level,
         "limited_evidence_reason": limited_evidence_reason,
         "explanation": explanation,
-        "evidence_items": qualifying_evidence if verdict == "RED" else [],
+        "evidence_items": qualifying_evidence if verdict == "RED" else (qualifying_evidence if qualifying_evidence else (verified_evidence if verdict == "NEEDS_REVIEW" else [])),
+        "qualifying_evidence": qualifying_evidence,
         "dropped_evidence_count": dropped_count,
         "dropped_details": {"reasons": dropped_reasons} if dropped_reasons else None
     }

@@ -9,6 +9,12 @@ request_id_ctx: ContextVar[str] = ContextVar("request_id", default="")
 class RedactingJsonFormatter(logging.Formatter):
     """Structured JSON formatter with request ID and privacy redaction."""
     REDACTED_KEYS = {"transcript", "text", "words", "raw_response", "audio_bytes", "quote"}
+    STANDARD_RECORD_ATTRS = {
+        "name", "msg", "args", "levelname", "levelno", "pathname", "filename",
+        "module", "exc_info", "exc_text", "stack_info", "lineno", "funcName",
+        "created", "msecs", "relativeCreated", "thread", "threadName",
+        "processName", "process", "message", "asctime", "extra"
+    }
 
     def format(self, record: logging.LogRecord) -> str:
         log_obj: dict[str, Any] = {
@@ -19,7 +25,15 @@ class RedactingJsonFormatter(logging.Formatter):
             "request_id": request_id_ctx.get(),
         }
 
-        # Redact any sensitive fields attached to extra
+        # Include custom attributes from record.__dict__ (passed via extra={...})
+        for k, v in record.__dict__.items():
+            if k not in self.STANDARD_RECORD_ATTRS and not k.startswith("_"):
+                if k in self.REDACTED_KEYS:
+                    log_obj[k] = "[REDACTED]"
+                else:
+                    log_obj[k] = v
+
+        # Redact any sensitive fields attached to explicit record.extra
         if hasattr(record, "extra") and isinstance(record.extra, dict):
             for k, v in record.extra.items():
                 if k in self.REDACTED_KEYS:
