@@ -13,6 +13,7 @@ from app.utils.errors import AppError
 
 def test_filename_and_mime_validation_valid():
     assert validate_filename_and_mime("test_call.m4a", "audio/mp4") == "test_call.m4a"
+    assert validate_filename_and_mime("call.mp4", "video/mp4") == "call.mp4"
     assert validate_filename_and_mime("call.mp3", "audio/mpeg") == "call.mp3"
     assert validate_filename_and_mime("recording.wav", "audio/wav") == "recording.wav"
     assert validate_filename_and_mime("meeting.mpeg", "video/mpeg") == "meeting.mpeg"
@@ -38,10 +39,13 @@ def test_filename_validation_empty():
 
 
 def test_audio_container_verification():
-    # Valid M4A
+    # Valid M4A & MP4
     m4a_header = b"\x00\x00\x00\x20ftypM4A \x00\x00\x00\x00"
+    mp4_header = b"\x00\x00\x00\x1cftypisom\x00\x00\x02\x00"
     assert validate_audio_container(m4a_header, "call.m4a") is True
+    assert validate_audio_container(mp4_header, "call.mp4") is True
     assert validate_audio_container(b"RIFF\x24\x08\x00\x00WAVEfmt ", "call.m4a") is False
+    assert validate_audio_container(b"RIFF\x24\x08\x00\x00WAVEfmt ", "call.mp4") is False
 
     # Valid WAV
     wav_header = b"RIFF\x24\x08\x00\x00WAVEfmt \x10\x00\x00\x00"

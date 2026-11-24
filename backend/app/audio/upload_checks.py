@@ -2,9 +2,10 @@ from pathlib import Path
 from app.utils.errors import AppError
 from app.config import settings
 
-VALID_EXTENSIONS = {".m4a", ".mp3", ".wav", ".mpeg", ".mpg", ".mpga"}
+VALID_EXTENSIONS = {".m4a", ".mp4", ".mp3", ".wav", ".mpeg", ".mpg", ".mpga"}
 VALID_MIME_TYPES = {
     "audio/mp4",
+    "video/mp4",
     "audio/x-m4a",
     "audio/m4a",
     "audio/mpeg",
@@ -26,7 +27,7 @@ def validate_filename_and_mime(filename: str, content_type: str) -> str:
     if not any(lower_name.endswith(ext) for ext in VALID_EXTENSIONS):
         raise AppError(
             "INVALID_FILE_TYPE",
-            f"Unsupported file extension. Supported formats: .m4a, .mp3, .wav, .mpeg, .mpg.",
+            f"Unsupported file extension. Supported formats: .m4a, .mp4, .mp3, .wav, .mpeg, .mpg.",
             415,
             details={"filename": filename, "supported": sorted(list(VALID_EXTENSIONS))}
         )
@@ -49,7 +50,7 @@ def validate_audio_container(header_bytes: bytes, filename: str) -> bool:
         return False
     
     ext = Path(filename).suffix.lower()
-    if ext == ".m4a":
+    if ext in (".m4a", ".mp4"):
         return validate_ftyp_box(header_bytes)
     elif ext == ".wav":
         if len(header_bytes) < 12:

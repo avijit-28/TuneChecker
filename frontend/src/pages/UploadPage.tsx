@@ -70,7 +70,7 @@ export const UploadPage: React.FC = () => {
           Upload Sales Call Recording
         </h1>
         <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
-          Upload an .m4a audio recording of a customer sales conversation to audit the sales representative's tone
+          Upload an audio or video call recording (.m4a, .mp4, .mp3, .wav, .mpeg) of a customer sales conversation to audit the sales representative's tone
           and track follow-up commitments.
         </p>
       </div>
