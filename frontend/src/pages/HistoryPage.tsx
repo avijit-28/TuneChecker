@@ -167,11 +167,12 @@ export const HistoryPage: React.FC = () => {
 
       {/* Table */}
       <div
+        className="responsive-table-container"
         style={{
           backgroundColor: 'var(--color-surface)',
           borderRadius: '12px',
           border: '1px solid var(--color-border)',
-          overflow: 'hidden',
+          overflowX: 'auto',
         }}
       >
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>

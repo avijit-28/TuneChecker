@@ -287,6 +287,7 @@ export const ResultsPage: React.FC = () => {
 
       {/* Main Analysis & Transcript Grid */}
       <div
+        className="results-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',

@@ -36,9 +36,6 @@ class FasterWhisperProvider(BaseSttProvider):
             elif mode == "hindi":
                 lang_param = "hi"
                 initial_prompt_val = "यह ग्राहक बिक्री कॉल हिंदी और हिंग्लिश में है। कृपया देवनागरी में ट्रांसक्राइब करें।"
-            elif mode == "bengali":
-                lang_param = "bn"
-                initial_prompt_val = "কাস্টমার সেলস কল, অর্ডার, দাম, প্রোডাক্ট এবং ডেলিভারির কথা।"
             elif mode == "english":
                 lang_param = "en"
                 initial_prompt_val = "Customer sales call, product orders, quantities, pricing, delivery, English conversation."
@@ -46,14 +43,22 @@ class FasterWhisperProvider(BaseSttProvider):
                 lang_param = settings.WHISPER_LANGUAGE
                 initial_prompt_val = settings.WHISPER_INITIAL_PROMPT
 
+            vad_params = dict(
+                threshold=0.25,
+                min_speech_duration_ms=100,
+                min_silence_duration_ms=400,
+                speech_pad_ms=400
+            )
+
             segments_gen, info = model.transcribe(
                 str(audio_path),
                 beam_size=settings.WHISPER_BEAM_SIZE,
                 language=lang_param,
                 initial_prompt=initial_prompt_val,
                 vad_filter=True,
+                vad_parameters=vad_params,
                 condition_on_previous_text=settings.WHISPER_CONDITION_ON_PREVIOUS_TEXT,
-                no_speech_threshold=settings.WHISPER_NO_SPEECH_THRESHOLD,
+                no_speech_threshold=0.6,
                 log_prob_threshold=settings.WHISPER_LOG_PROB_THRESHOLD,
                 word_timestamps=True
             )
@@ -67,8 +72,9 @@ class FasterWhisperProvider(BaseSttProvider):
                     language="en",
                     initial_prompt=initial_prompt_val,
                     vad_filter=True,
+                    vad_parameters=vad_params,
                     condition_on_previous_text=settings.WHISPER_CONDITION_ON_PREVIOUS_TEXT,
-                    no_speech_threshold=settings.WHISPER_NO_SPEECH_THRESHOLD,
+                    no_speech_threshold=0.6,
                     log_prob_threshold=settings.WHISPER_LOG_PROB_THRESHOLD,
                     word_timestamps=True
                 )

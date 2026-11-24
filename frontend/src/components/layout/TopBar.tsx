@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { apiRequest } from '../../api/client';
-import { ShieldCheck, ShieldAlert, Cpu } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Cpu, Menu } from 'lucide-react';
 
-export const TopBar: React.FC = () => {
+interface TopBarProps {
+  onToggleMobileNav?: () => void;
+}
+
+export const TopBar: React.FC<TopBarProps> = ({ onToggleMobileNav }) => {
   const [health, setHealth] = useState<{ status: string; checks: Record<string, string> } | null>(null);
 
   useEffect(() => {
@@ -15,6 +19,7 @@ export const TopBar: React.FC = () => {
 
   return (
     <header
+      className="topbar-container"
       style={{
         height: '60px',
         backgroundColor: 'var(--color-surface)',
@@ -28,8 +33,28 @@ export const TopBar: React.FC = () => {
         zIndex: 10
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          type="button"
+          onClick={onToggleMobileNav}
+          className="mobile-nav-toggle"
+          aria-label="Toggle navigation menu"
+          style={{
+            background: 'none',
+            border: '1px solid var(--color-border)',
+            borderRadius: '6px',
+            padding: '6px',
+            color: 'var(--color-text-primary)',
+            cursor: 'pointer',
+            display: 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Menu size={20} />
+        </button>
+
+        <span className="system-engine-label" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
           System Engine:
         </span>
         <span 

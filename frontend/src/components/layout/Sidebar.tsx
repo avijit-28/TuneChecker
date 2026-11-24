@@ -10,9 +10,11 @@ import {
 
 interface SidebarProps {
   collapsed?: boolean;
+  mobileOpen?: boolean;
+  onClose?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = () => {
+export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose }) => {
   const navItems = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/upload', label: 'Upload Call', icon: UploadCloud },
@@ -22,6 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
 
   return (
     <aside 
+      className={`sidebar-desktop ${mobileOpen ? 'mobile-open' : ''}`}
       style={{
         width: '240px',
         backgroundColor: 'var(--color-surface)',
@@ -75,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
               key={item.to}
               to={item.to}
               end={item.to === '/'}
+              onClick={() => onClose?.()}
               style={({ isActive }) => ({
                 display: 'flex',
                 alignItems: 'center',

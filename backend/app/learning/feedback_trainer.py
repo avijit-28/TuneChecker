@@ -79,12 +79,30 @@ def train_and_evaluate_feedback(db: Session, min_per_class: int = 2) -> Dict[str
             labels.append(label)
 
     counts = {0: labels.count(0), 1: labels.count(1)}
-    if counts[0] < min_per_class or counts[1] < min_per_class:
-        return {
-            "status": "need_more_examples",
-            "message": f"Requires at least {min_per_class} reviewed calls per class. Current counts: GREEN={counts[0]}, RED={counts[1]}",
-            "counts": {"GREEN": counts[0], "RED": counts[1]}
-        }
+    
+    # Baseline anchor examples so calibrator can train even with early/sparse user reviews
+    seed_anchors = [
+        # GREEN anchors (consultative, patient, transparent)
+        ("Thank you for your time today. We completely understand your schedule and are happy to send over details for you to review at your convenience. No pressure at all.", 0),
+        ("I appreciate you sharing your current workflow. Our platform is optional and designed to help if you ever decide to automate. Have a great weekend.", 0),
+        ("That makes total sense. We can follow up next month when you have more bandwidth. Thanks for speaking with us.", 0),
+        # RED anchors (pushy, aggressive, dismissive, high-pressure)
+        ("You need to make a decision right now on this call. This discount expires in ten minutes and if you do not sign today you will regret it.", 1),
+        ("Why are you making excuses? Your current process is terrible and you are losing money every day. Sign the contract immediately.", 1),
+        ("I don't care about your budget, this is mandatory if you want to stay in business. Give me your credit card details now.", 1),
+    ]
+
+    # If any class is below min_per_class, augment with domain anchors
+    if counts[0] < min_per_class:
+        for text, l in [a for a in seed_anchors if a[1] == 0]:
+            texts.append(text)
+            labels.append(l)
+    if counts[1] < min_per_class:
+        for text, l in [a for a in seed_anchors if a[1] == 1]:
+            texts.append(text)
+            labels.append(l)
+
+    counts = {0: labels.count(0), 1: labels.count(1)}
 
     def build_pipeline():
         return Pipeline([
