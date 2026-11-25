@@ -116,6 +116,7 @@ class Settings(BaseSettings):
     # Security / CORS
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
     HUGGINGFACE_TOKEN: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
 
     model_config = SettingsConfigDict(
         env_file=BACKEND_DIR / ".env",

@@ -1,0 +1,95 @@
+{
+  "description": "Verbatim Tier A ground truth transcripts derived from scripts/generate_sample_calls.py for TuneChecker sample calls.",
+  "samples": [
+    {
+      "id": "green_call_01",
+      "audio_path": "samples/green_call_01.m4a",
+      "expected_verdict": "GREEN",
+      "language": "en",
+      "source": "scripts/generate_sample_calls.py:GREEN_LINES",
+      "utterances": [
+        {
+          "voice": "Microsoft Zira Desktop",
+          "role": "sales_rep",
+          "text": "Hello, thank you so much for taking the time to speak with me today. How are things going?"
+        },
+        {
+          "voice": "Microsoft David Desktop",
+          "role": "customer",
+          "text": "Hi Sarah, things are going well. We looked through your platform demo and we really like the reporting features."
+        },
+        {
+          "voice": "Microsoft Zira Desktop",
+          "role": "sales_rep",
+          "text": "I am really glad to hear that. Our engineering team worked hard to make those dashboards intuitive for sales teams."
+        },
+        {
+          "voice": "Microsoft David Desktop",
+          "role": "customer",
+          "text": "Our main question is around data migration from our existing CRM. How complicated is that process?"
+        },
+        {
+          "voice": "Microsoft Zira Desktop",
+          "role": "sales_rep",
+          "text": "That is completely understandable to be mindful of. We provide dedicated onboarding specialists to assist with the transition step-by-step."
+        },
+        {
+          "voice": "Microsoft David Desktop",
+          "role": "customer",
+          "text": "That gives us a lot of peace of mind. Could you share some technical documentation on the API endpoints?"
+        },
+        {
+          "voice": "Microsoft Zira Desktop",
+          "role": "sales_rep",
+          "text": "Absolutely. Documentation will be shared with your team after this call, and we can schedule a technical deep-dive whenever you are ready."
+        }
+      ],
+      "reference_transcript": "Hello, thank you so much for taking the time to speak with me today. How are things going? Hi Sarah, things are going well. We looked through your platform demo and we really like the reporting features. I am really glad to hear that. Our engineering team worked hard to make those dashboards intuitive for sales teams. Our main question is around data migration from our existing CRM. How complicated is that process? That is completely understandable to be mindful of. We provide dedicated onboarding specialists to assist with the transition step-by-step. That gives us a lot of peace of mind. Could you share some technical documentation on the API endpoints? Absolutely. Documentation will be shared with your team after this call, and we can schedule a technical deep-dive whenever you are ready."
+    },
+    {
+      "id": "red_call_01",
+      "audio_path": "samples/red_call_01.m4a",
+      "expected_verdict": "RED",
+      "language": "en",
+      "source": "scripts/generate_sample_calls.py:RED_LINES",
+      "utterances": [
+        {
+          "voice": "Microsoft David Desktop",
+          "role": "sales_rep",
+          "text": "Hello, thanks for taking my call today. Let's get right into the contract."
+        },
+        {
+          "voice": "Microsoft Zira Desktop",
+          "role": "customer",
+          "text": "Hi David, thanks for calling. We reviewed your initial proposal, but the pricing feels quite high for our team size."
+        },
+        {
+          "voice": "Microsoft David Desktop",
+          "role": "sales_rep",
+          "text": "Look, if you cannot afford our standard enterprise pricing, you are frankly wasting both of our time. We don't give handouts to small shops."
+        },
+        {
+          "voice": "Microsoft Zira Desktop",
+          "role": "customer",
+          "text": "That is quite an aggressive response. We just wanted to see if there is any flexibility on implementation fees."
+        },
+        {
+          "voice": "Microsoft David Desktop",
+          "role": "sales_rep",
+          "text": "Take it or leave it. I will email you the revised contract addendum by tomorrow at 5 PM, but the price is non-negotiable."
+        },
+        {
+          "voice": "Microsoft Zira Desktop",
+          "role": "customer",
+          "text": "Okay, please send that over, though we will likely need to evaluate other vendors."
+        },
+        {
+          "voice": "Microsoft David Desktop",
+          "role": "sales_rep",
+          "text": "Fine. Maybe we could look into custom integrations next quarter, but do not count on it. Goodbye."
+        }
+      ],
+      "reference_transcript": "Hello, thanks for taking my call today. Let's get right into the contract. Hi David, thanks for calling. We reviewed your initial proposal, but the pricing feels quite high for our team size. Look, if you cannot afford our standard enterprise pricing, you are frankly wasting both of our time. We don't give handouts to small shops. That is quite an aggressive response. We just wanted to see if there is any flexibility on implementation fees. Take it or leave it. I will email you the revised contract addendum by tomorrow at 5 PM, but the price is non-negotiable. Okay, please send that over, though we will likely need to evaluate other vendors. Fine. Maybe we could look into custom integrations next quarter, but do not count on it. Goodbye."
+    }
+  ]
+}
