@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "timestamp_utc": "2026-11-25T05:27:46Z",
-    "mock_mode": true,
+    "timestamp_utc": "2026-11-25T10:39:29Z",
+    "mock_mode": false,
     "tier": "all",
     "models_requested": [
       "gemini",
@@ -9,12 +9,12 @@
     ],
     "whisper_model": "large-v3-turbo",
     "language_mode": "english",
-    "requested_gemini_model": "gemini-4-hydrogen",
-    "effective_gemini_model": "gemini-4-hydrogen",
+    "requested_gemini_model": "gemini-3.5-flash",
+    "effective_gemini_model": "gemini-3.5-flash",
     "deprecation_note": null,
-    "gemini_api_key_configured": false,
+    "gemini_api_key_configured": true,
     "dataset_slice": "2",
-    "max_audio_seconds": null,
+    "max_audio_seconds": 30.0,
     "local_files_only": false,
     "jiwer_version": "4.0.0",
     "google_genai_version": "3.6.1",
@@ -34,84 +34,70 @@
           "engine": "local",
           "model": "faster-whisper:large-v3-turbo",
           "status": "ok",
-          "text": "Hello, thank you so much for taking the time to speak with me today. How are things going? Hi Sarah, things are going well. We looked through your platform demo and we really like the reporting features. I'm really glad to hear that. Our engineering team worked hard to make those dashboards intuitive for sales teams. Our main question is around data migration from our existing CRM. How complicated is that process? That's completely understandable to be mindful of. We provide dedicated onboarding specialists to assist with the transition step by step. That gives us a lot of peace of mind. Could you share some technical documentation on the API endpoints? Absolutely. Documentation will be shared with your team after this call, and we can schedule a technical deep dive whenever you are ready.",
+          "text": "Hello, thank you so much for taking the time to speak with me today. How are things going? Hi Sarah, things are going well. We looked through your platform demo and we really like the reporting features. I am really glad to hear that. Our engineering team worked hard to make those dashboards intuitive for sales teams. Our main question is around data migration from our existing CRM. How complicated is that process? That is completely understandable to be mindful of. We provide dedicated onboarding specialists to assist with the transition step by step. That gives us a lot of peace of mind. Could you share some technical documentation on the API endpoints? Absolutely. Documentation will be shared with your team after this call, and we can schedule a technical deep dive whenever you are ready.",
           "audio_duration_seconds": 55.63,
-          "processing_time_seconds": 7.788,
-          "model_load_seconds": 0.0,
-          "real_time_factor": 0.14,
-          "speed_factor": 7.14,
-          "throughput_wps": 17.21,
-          "word_count": 134,
-          "utterance_count": 7,
+          "processing_time_seconds": 18.326,
+          "model_load_seconds": 4.192,
+          "real_time_factor": 0.3294,
+          "speed_factor": 3.04,
+          "throughput_wps": 7.42,
+          "word_count": 136,
+          "utterance_count": 10,
           "cost_usd": 0.0,
           "error": null,
-          "mode": "mock",
-          "segments": [],
-          "metrics": {
-            "wer": 0.029412,
-            "wer_percent": 2.94,
-            "cer": 0.005096,
-            "cer_percent": 0.51,
-            "accuracy_percent": 97.06,
-            "substitutions": 2,
-            "deletions": 2,
-            "insertions": 0,
-            "hits": 132,
-            "char_substitutions": 0,
-            "char_deletions": 4,
-            "char_insertions": 0,
-            "char_hits": 781,
-            "ref_word_count": 136,
-            "hyp_word_count": 134,
-            "ref_char_count": 785,
-            "hyp_char_count": 781
-          },
-          "vocab_diff": {
-            "ref_unique_vocab_count": 98,
-            "hyp_unique_vocab_count": 98,
-            "shared_vocab_count": 96,
-            "jaccard_similarity": 0.96,
-            "only_in_reference": [
-              "am",
-              "i"
-            ],
-            "only_in_reference_total": 2,
-            "only_in_hypothesis": [
-              "im",
-              "thats"
-            ],
-            "only_in_hypothesis_total": 2,
-            "substitution_pairs": [
-              {
-                "reference": "i am",
-                "hypothesis": "im",
-                "count": 1
-              },
-              {
-                "reference": "that is",
-                "hypothesis": "thats",
-                "count": 1
-              }
-            ]
-          }
-        },
-        "gemini": {
-          "engine": "gemini",
-          "model": "gemini-4-hydrogen",
-          "status": "ok",
-          "text": "Hello, thank you so much for taking the time to speak with me today. How are things going? Hi Sarah, things are going well. We looked through your platform demo and we really like the reporting features. I am really glad to hear that. Our engineering team worked hard to make those dashboards intuitive for sales teams. Our main question is around data migration from our existing CRM. How complicated is that process? That is completely understandable to be mindful of. We provide dedicated onboarding specialists to assist with the transition step by step. That gives us a lot of peace of mind. Could you share some technical documentation on the API endpoints? Absolutely. Documentation will be shared with your team after this call, and we can schedule a technical deep-dive whenever you are ready.",
-          "audio_duration_seconds": 55.63,
-          "processing_time_seconds": 2.225,
-          "model_load_seconds": 0.0,
-          "real_time_factor": 0.04,
-          "speed_factor": 25.0,
-          "throughput_wps": 61.12,
-          "word_count": 136,
-          "utterance_count": 0,
-          "cost_usd": 0.00185,
-          "error": null,
-          "mode": "mock",
-          "segments": [],
+          "mode": "live",
+          "segments": [
+            {
+              "start_ms": 0,
+              "end_ms": 5730,
+              "text": "Hello, thank you so much for taking the time to speak with me today. How are things going?"
+            },
+            {
+              "start_ms": 6460,
+              "end_ms": 13540,
+              "text": "Hi Sarah, things are going well. We looked through your platform demo and we really like the reporting features."
+            },
+            {
+              "start_ms": 14110,
+              "end_ms": 21290,
+              "text": "I am really glad to hear that. Our engineering team worked hard to make those dashboards intuitive for sales teams."
+            },
+            {
+              "start_ms": 21870,
+              "end_ms": 28920,
+              "text": "Our main question is around data migration from our existing CRM. How complicated is that process?"
+            },
+            {
+              "start_ms": 29830,
+              "end_ms": 32670,
+              "text": "That is completely understandable to be mindful of."
+            },
+            {
+              "start_ms": 33110,
+              "end_ms": 38230,
+              "text": "We provide dedicated onboarding specialists to assist with the transition step by step."
+            },
+            {
+              "start_ms": 38770,
+              "end_ms": 40950,
+              "text": "That gives us a lot of peace of mind."
+            },
+            {
+              "start_ms": 41500,
+              "end_ms": 45780,
+              "text": "Could you share some technical documentation on the API endpoints?"
+            },
+            {
+              "start_ms": 46720,
+              "end_ms": 51370,
+              "text": "Absolutely. Documentation will be shared with your team after this call,"
+            },
+            {
+              "start_ms": 51610,
+              "end_ms": 54750,
+              "text": "and we can schedule a technical deep dive whenever you are ready."
+            }
+          ],
           "metrics": {
             "wer": 0.0,
             "wer_percent": 0.0,
@@ -142,6 +128,64 @@
             "only_in_hypothesis_total": 0,
             "substitution_pairs": []
           }
+        },
+        "gemini": {
+          "engine": "gemini",
+          "model": "gemini-3.5-flash",
+          "status": "ok",
+          "text": "Hello. Thank you so much for taking the time to speak with me today. How are things going?\n\nHi Sarah. Things are going well. We looked through your platform demo and we really liked the reporting features.\n\nI am really glad to hear that. Our engineering team worked hard to make those dashboards intuitive for sales teams.\n\nOur main question is around data migration from our existing CRM. How complicated is that process?\n\nThat is completely understandable to be mindful of. We provide dedicated onboarding specialists to assist with the transition step-by-step.\n\nThat gives us a lot of peace of mind. Could you share some technical documentation on the API endpoints?\n\nAbsolutely. Documentation will be shared with your team after this call and we can schedule a technical deep dive whenever you are ready.",
+          "audio_duration_seconds": 55.63,
+          "processing_time_seconds": 9.28,
+          "model_load_seconds": 0.0,
+          "real_time_factor": 0.1668,
+          "speed_factor": 5.99,
+          "throughput_wps": 14.66,
+          "word_count": 136,
+          "utterance_count": 0,
+          "cost_usd": 0.00185,
+          "error": null,
+          "mode": "live",
+          "segments": [],
+          "metrics": {
+            "wer": 0.007353,
+            "wer_percent": 0.74,
+            "cer": 0.001274,
+            "cer_percent": 0.13,
+            "accuracy_percent": 99.26,
+            "substitutions": 1,
+            "deletions": 0,
+            "insertions": 0,
+            "hits": 135,
+            "char_substitutions": 0,
+            "char_deletions": 0,
+            "char_insertions": 1,
+            "char_hits": 785,
+            "ref_word_count": 136,
+            "hyp_word_count": 136,
+            "ref_char_count": 785,
+            "hyp_char_count": 786
+          },
+          "vocab_diff": {
+            "ref_unique_vocab_count": 98,
+            "hyp_unique_vocab_count": 98,
+            "shared_vocab_count": 97,
+            "jaccard_similarity": 0.9798,
+            "only_in_reference": [
+              "like"
+            ],
+            "only_in_reference_total": 1,
+            "only_in_hypothesis": [
+              "liked"
+            ],
+            "only_in_hypothesis_total": 1,
+            "substitution_pairs": [
+              {
+                "reference": "like",
+                "hypothesis": "liked",
+                "count": 1
+              }
+            ]
+          }
         }
       },
       {
@@ -154,91 +198,60 @@
           "engine": "local",
           "model": "faster-whisper:large-v3-turbo",
           "status": "ok",
-          "text": "Hello, thanks for taking my call today. Let's get right into the contract. Hi David, thanks for calling. We reviewed your initial proposal, but the pricing feels quite high for our team size. Look, if you can't afford our standard enterprise pricing, you're frankly wasting both of our time. We don't give handouts to small shops. That is quite an aggressive response. We just wanted to see if there is any flexibility on implementation fees. Take it or leave it. I will email you the revised contract addendum by tomorrow at five PM, but the price is non negotiable. Okay, please send that over, though we will likely need to evaluate other vendors. Fine. Maybe we could look into custom integrations next quarter, but do not count on it. Goodbye.",
+          "text": "Hello, thanks for taking my call today. Let's get right into the contract. Hi David, thanks for calling. We reviewed your initial proposal, but the pricing feels quite high for our team size. Look, if you cannot afford our standard enterprise pricing, you are frankly wasting both of our time. We don't give handouts to small shops. That is quite an aggressive response. We just wanted to see if there is any flexibility on implementation fees. Take it or leave it. I will email you the revised contract addendum by tomorrow at 5 p.m., but the price is non-negotiable. Okay, please send that over, though we will likely need to evaluate other vendors. Fine. Maybe we could look into custom integrations next quarter, but do not count on it. Goodbye.",
           "audio_duration_seconds": 55.7,
-          "processing_time_seconds": 7.798,
+          "processing_time_seconds": 24.866,
           "model_load_seconds": 0.0,
-          "real_time_factor": 0.14,
-          "speed_factor": 7.14,
-          "throughput_wps": 16.67,
-          "word_count": 130,
-          "utterance_count": 7,
+          "real_time_factor": 0.4464,
+          "speed_factor": 2.24,
+          "throughput_wps": 5.27,
+          "word_count": 131,
+          "utterance_count": 8,
           "cost_usd": 0.0,
           "error": null,
-          "mode": "mock",
-          "segments": [],
-          "metrics": {
-            "wer": 0.030534,
-            "wer_percent": 3.05,
-            "cer": 0.01108,
-            "cer_percent": 1.11,
-            "accuracy_percent": 96.95,
-            "substitutions": 3,
-            "deletions": 1,
-            "insertions": 0,
-            "hits": 127,
-            "char_substitutions": 1,
-            "char_deletions": 4,
-            "char_insertions": 3,
-            "char_hits": 717,
-            "ref_word_count": 131,
-            "hyp_word_count": 130,
-            "ref_char_count": 722,
-            "hyp_char_count": 721
-          },
-          "vocab_diff": {
-            "ref_unique_vocab_count": 100,
-            "hyp_unique_vocab_count": 100,
-            "shared_vocab_count": 97,
-            "jaccard_similarity": 0.9417,
-            "only_in_reference": [
-              "5",
-              "are",
-              "cannot"
-            ],
-            "only_in_reference_total": 3,
-            "only_in_hypothesis": [
-              "cant",
-              "five",
-              "youre"
-            ],
-            "only_in_hypothesis_total": 3,
-            "substitution_pairs": [
-              {
-                "reference": "cannot",
-                "hypothesis": "cant",
-                "count": 1
-              },
-              {
-                "reference": "you are",
-                "hypothesis": "youre",
-                "count": 1
-              },
-              {
-                "reference": "5",
-                "hypothesis": "five",
-                "count": 1
-              }
-            ]
-          }
-        },
-        "gemini": {
-          "engine": "gemini",
-          "model": "gemini-4-hydrogen",
-          "status": "ok",
-          "text": "Hello, thanks for taking my call today. Let's get right into the contract. Hi David, thanks for calling. We reviewed your initial proposal, but the pricing feels quite high for our team size. Look, if you cannot afford our standard enterprise pricing, you are frankly wasting both of our time. We don't give handouts to small shops. That is quite an aggressive response. We just wanted to see if there is any flexibility on implementation fees. Take it or leave it. I will email you the revised contract addendum by tomorrow at 5 PM, but the price is non negotiable. Okay, please send that over, though we will likely need to evaluate other vendors. Fine. Maybe we could look into custom integrations next quarter, but do not count on it. Goodbye.",
-          "audio_duration_seconds": 55.7,
-          "processing_time_seconds": 2.228,
-          "model_load_seconds": 0.0,
-          "real_time_factor": 0.04,
-          "speed_factor": 25.0,
-          "throughput_wps": 58.8,
-          "word_count": 131,
-          "utterance_count": 0,
-          "cost_usd": 0.00186,
-          "error": null,
-          "mode": "mock",
-          "segments": [],
+          "mode": "live",
+          "segments": [
+            {
+              "start_ms": 0,
+              "end_ms": 5210,
+              "text": "Hello, thanks for taking my call today. Let's get right into the contract."
+            },
+            {
+              "start_ms": 5860,
+              "end_ms": 13930,
+              "text": "Hi David, thanks for calling. We reviewed your initial proposal, but the pricing feels quite high for our team size."
+            },
+            {
+              "start_ms": 14510,
+              "end_ms": 24050,
+              "text": "Look, if you cannot afford our standard enterprise pricing, you are frankly wasting both of our time. We don't give handouts to small shops."
+            },
+            {
+              "start_ms": 24050,
+              "end_ms": 31860,
+              "text": "That is quite an aggressive response. We just wanted to see if there is any flexibility on implementation fees."
+            },
+            {
+              "start_ms": 32439,
+              "end_ms": 40850,
+              "text": "Take it or leave it. I will email you the revised contract addendum by tomorrow at 5 p.m., but the price is non-negotiable."
+            },
+            {
+              "start_ms": 41480,
+              "end_ms": 46500,
+              "text": "Okay, please send that over, though we will likely need to evaluate other vendors."
+            },
+            {
+              "start_ms": 47340,
+              "end_ms": 53620,
+              "text": "Fine. Maybe we could look into custom integrations next quarter, but do not count on it."
+            },
+            {
+              "start_ms": 54400,
+              "end_ms": 54800,
+              "text": "Goodbye."
+            }
+          ],
           "metrics": {
             "wer": 0.0,
             "wer_percent": 0.0,
@@ -269,6 +282,64 @@
             "only_in_hypothesis_total": 0,
             "substitution_pairs": []
           }
+        },
+        "gemini": {
+          "engine": "gemini",
+          "model": "gemini-3.5-flash",
+          "status": "ok",
+          "text": "Hello. Thanks for taking my call today. Let's get right into the contract. Hi David. Thanks for calling. We reviewed your initial proposal, but the pricing feels quite high for our team size. Look, if you cannot afford our standard enterprise pricing, you are frankly wasting both of our time. We don't give handouts to small shops. That is quite an aggressive response. We just wanted to see if there is any flexibility on implementation fees. Take it or leave it. I will email you the revised contract addendum by tomorrow at 5:00 p.m., but the price is non-negotiable. Okay, please send that over, though we will likely need to evaluate other vendors. Fine. Maybe we could look into custom integrations next quarter, but do not count on it. Goodbye.",
+          "audio_duration_seconds": 55.7,
+          "processing_time_seconds": 8.093,
+          "model_load_seconds": 0.0,
+          "real_time_factor": 0.1453,
+          "speed_factor": 6.88,
+          "throughput_wps": 16.19,
+          "word_count": 131,
+          "utterance_count": 0,
+          "cost_usd": 0.00186,
+          "error": null,
+          "mode": "live",
+          "segments": [],
+          "metrics": {
+            "wer": 0.007634,
+            "wer_percent": 0.76,
+            "cer": 0.00277,
+            "cer_percent": 0.28,
+            "accuracy_percent": 99.24,
+            "substitutions": 1,
+            "deletions": 0,
+            "insertions": 0,
+            "hits": 130,
+            "char_substitutions": 0,
+            "char_deletions": 0,
+            "char_insertions": 2,
+            "char_hits": 722,
+            "ref_word_count": 131,
+            "hyp_word_count": 131,
+            "ref_char_count": 722,
+            "hyp_char_count": 724
+          },
+          "vocab_diff": {
+            "ref_unique_vocab_count": 100,
+            "hyp_unique_vocab_count": 100,
+            "shared_vocab_count": 99,
+            "jaccard_similarity": 0.9802,
+            "only_in_reference": [
+              "5"
+            ],
+            "only_in_reference_total": 1,
+            "only_in_hypothesis": [
+              "500"
+            ],
+            "only_in_hypothesis_total": 1,
+            "substitution_pairs": [
+              {
+                "reference": "5",
+                "hypothesis": "500",
+                "count": 1
+              }
+            ]
+          }
         }
       }
     ],
@@ -276,35 +347,10 @@
       "local": {
         "evaluated_samples": 2,
         "total_audio_duration_seconds": 111.33,
-        "total_processing_time_seconds": 15.586,
-        "real_time_factor": 0.14,
-        "speed_factor": 7.14,
-        "throughput_wps": 16.94,
-        "wer": 0.029963,
-        "wer_percent": 3.0,
-        "cer": 0.007958,
-        "cer_percent": 0.8,
-        "accuracy_percent": 97.0,
-        "substitutions": 5,
-        "deletions": 3,
-        "insertions": 0,
-        "hits": 259,
-        "char_substitutions": 1,
-        "char_deletions": 8,
-        "char_insertions": 3,
-        "char_hits": 1499,
-        "ref_word_count": 267,
-        "hyp_word_count": 264,
-        "ref_char_count": 1508,
-        "hyp_char_count": 1503
-      },
-      "gemini": {
-        "evaluated_samples": 2,
-        "total_audio_duration_seconds": 111.33,
-        "total_processing_time_seconds": 4.453,
-        "real_time_factor": 0.04,
-        "speed_factor": 25.0,
-        "throughput_wps": 59.96,
+        "total_processing_time_seconds": 43.192,
+        "real_time_factor": 0.388,
+        "speed_factor": 2.58,
+        "throughput_wps": 6.18,
         "wer": 0.0,
         "wer_percent": 0.0,
         "cer": 0.0,
@@ -322,6 +368,31 @@
         "hyp_word_count": 267,
         "ref_char_count": 1508,
         "hyp_char_count": 1508
+      },
+      "gemini": {
+        "evaluated_samples": 2,
+        "total_audio_duration_seconds": 111.33,
+        "total_processing_time_seconds": 17.373,
+        "real_time_factor": 0.156,
+        "speed_factor": 6.41,
+        "throughput_wps": 15.37,
+        "wer": 0.007491,
+        "wer_percent": 0.75,
+        "cer": 0.001989,
+        "cer_percent": 0.2,
+        "accuracy_percent": 99.25,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 0,
+        "hits": 265,
+        "char_substitutions": 0,
+        "char_deletions": 0,
+        "char_insertions": 3,
+        "char_hits": 1508,
+        "ref_word_count": 267,
+        "hyp_word_count": 267,
+        "ref_char_count": 1508,
+        "hyp_char_count": 1511
       }
     }
   },
@@ -336,82 +407,102 @@
       {
         "file_name": "en_000001.mp3",
         "topic": "business_finance",
-        "duration_seconds": 389.04,
+        "duration_seconds": 30.0,
         "turns_per_minute": 10.6,
         "overlap_percent": 16.5,
         "local": {
           "engine": "local",
           "model": "faster-whisper:large-v3-turbo",
           "status": "ok",
-          "text": "Good morning everyone, thank you for joining the quarterly finance alignment call. We reviewed the disbursement schedule for the vendor onboarding milestones and confirmed the invoice reconciliation will finalize on Friday afternoon. Please confirm whether the procurement team received the updated compliance addendum and ledger summaries.",
-          "audio_duration_seconds": 389.04,
-          "processing_time_seconds": 85.589,
+          "text": "Thank you very much.",
+          "audio_duration_seconds": 30.0,
+          "processing_time_seconds": 7.288,
           "model_load_seconds": 0.0,
-          "real_time_factor": 0.22,
-          "speed_factor": 4.55,
-          "throughput_wps": 0.54,
-          "word_count": 46,
-          "utterance_count": 8,
+          "real_time_factor": 0.2429,
+          "speed_factor": 4.12,
+          "throughput_wps": 0.55,
+          "word_count": 4,
+          "utterance_count": 1,
           "cost_usd": 0.0,
           "error": null,
-          "mode": "mock",
-          "segments": []
+          "mode": "live",
+          "segments": [
+            {
+              "start_ms": 180,
+              "end_ms": 24560,
+              "text": "Thank you very much."
+            }
+          ]
         },
         "gemini": {
           "engine": "gemini",
-          "model": "gemini-4-hydrogen",
+          "model": "gemini-3.5-flash",
           "status": "ok",
-          "text": "Good morning everyone, thank you for joining the quarterly finance alignment call. We reviewed the disbursement schedule for the vendor onboarding milestones and confirmed that the invoice reconciliation will finalize on Friday afternoon. Please confirm whether the procurement team received the updated compliance addendum and ledger summary.",
-          "audio_duration_seconds": 389.04,
-          "processing_time_seconds": 11.671,
+          "text": "Can you hear me? Need to talk. Can you hear me? Can you hear me, sir? League master.",
+          "audio_duration_seconds": 30.0,
+          "processing_time_seconds": 7.331,
           "model_load_seconds": 0.0,
-          "real_time_factor": 0.03,
-          "speed_factor": 33.33,
-          "throughput_wps": 4.03,
-          "word_count": 47,
+          "real_time_factor": 0.2444,
+          "speed_factor": 4.09,
+          "throughput_wps": 2.46,
+          "word_count": 18,
           "utterance_count": 0,
-          "cost_usd": 0.01297,
+          "cost_usd": 0.001,
           "error": null,
-          "mode": "mock",
+          "mode": "live",
           "segments": []
         },
         "cross_model_comparison": {
           "status": "ok",
-          "wer": 0.042553,
-          "wer_percent": 4.26,
-          "cer": 0.023599,
-          "cer_percent": 2.36,
-          "accuracy_percent": 95.74,
-          "substitutions": 1,
-          "deletions": 1,
+          "wer": 0.944444,
+          "wer_percent": 94.44,
+          "cer": 0.807692,
+          "cer_percent": 80.77,
+          "accuracy_percent": 5.56,
+          "substitutions": 3,
+          "deletions": 14,
           "insertions": 0,
-          "hits": 45,
-          "char_substitutions": 1,
-          "char_deletions": 5,
-          "char_insertions": 2,
-          "char_hits": 333,
-          "ref_word_count": 47,
-          "hyp_word_count": 46,
-          "ref_char_count": 339,
-          "hyp_char_count": 336,
+          "hits": 1,
+          "char_substitutions": 4,
+          "char_deletions": 59,
+          "char_insertions": 0,
+          "char_hits": 15,
+          "ref_word_count": 18,
+          "hyp_word_count": 4,
+          "ref_char_count": 78,
+          "hyp_char_count": 19,
           "vocab_diff": {
-            "ref_unique_vocab_count": 40,
-            "hyp_unique_vocab_count": 39,
-            "shared_vocab_count": 38,
-            "jaccard_similarity": 0.9268,
+            "ref_unique_vocab_count": 10,
+            "hyp_unique_vocab_count": 4,
+            "shared_vocab_count": 1,
+            "jaccard_similarity": 0.0769,
             "only_in_reference": [
-              "summary",
-              "that"
+              "can",
+              "hear",
+              "league",
+              "master",
+              "me",
+              "need",
+              "sir",
+              "talk",
+              "to"
             ],
-            "only_in_reference_total": 2,
+            "only_in_reference_total": 9,
             "only_in_hypothesis": [
-              "summaries"
+              "much",
+              "thank",
+              "very"
             ],
-            "only_in_hypothesis_total": 1,
+            "only_in_hypothesis_total": 3,
             "substitution_pairs": [
               {
-                "reference": "summary",
-                "hypothesis": "summaries",
+                "reference": "can",
+                "hypothesis": "thank",
+                "count": 1
+              },
+              {
+                "reference": "hear me need to talk can you hear me can you hear me sir league master",
+                "hypothesis": "very much",
                 "count": 1
               }
             ]
@@ -421,89 +512,133 @@
       {
         "file_name": "en_000002.mp3",
         "topic": "business_finance",
-        "duration_seconds": 666.58,
+        "duration_seconds": 30.0,
         "turns_per_minute": 13.1,
         "overlap_percent": 15.4,
         "local": {
           "engine": "local",
           "model": "faster-whisper:large-v3-turbo",
           "status": "ok",
-          "text": "Let's walk through the regional credit utilization metrics for the second quarter. Our partner banks reported faster turnaround times on small business loan approvals, though cross border settlement fees remain slightly above our target thresholds.",
-          "audio_duration_seconds": 666.58,
-          "processing_time_seconds": 146.647,
+          "text": "Hello. Hey, Madam. Hello. Please speak of students. Good afternoon, Nadia. I turn to Mr. Bye-bye. Okay. I am Yoshi 24-7. If you want to make generational wealth, it's from them. I wish.",
+          "audio_duration_seconds": 30.0,
+          "processing_time_seconds": 15.912,
           "model_load_seconds": 0.0,
-          "real_time_factor": 0.22,
-          "speed_factor": 4.55,
-          "throughput_wps": 0.24,
+          "real_time_factor": 0.5304,
+          "speed_factor": 1.89,
+          "throughput_wps": 2.2,
           "word_count": 35,
-          "utterance_count": 8,
+          "utterance_count": 4,
           "cost_usd": 0.0,
           "error": null,
-          "mode": "mock",
-          "segments": []
+          "mode": "live",
+          "segments": [
+            {
+              "start_ms": 750,
+              "end_ms": 10780,
+              "text": "Hello. Hey, Madam. Hello. Please speak of students. Good afternoon, Nadia. I turn to Mr. Bye-bye."
+            },
+            {
+              "start_ms": 13820,
+              "end_ms": 18400,
+              "text": "Okay. I am Yoshi 24-7."
+            },
+            {
+              "start_ms": 22900,
+              "end_ms": 26980,
+              "text": "If you want to make generational wealth, it's from them."
+            },
+            {
+              "start_ms": 26980,
+              "end_ms": 29900,
+              "text": "I wish."
+            }
+          ]
         },
         "gemini": {
           "engine": "gemini",
-          "model": "gemini-4-hydrogen",
+          "model": "gemini-3.5-flash",
           "status": "ok",
-          "text": "Let us walk through the regional credit utilization metrics for the second quarter. Our partner banks reported faster turnaround times on small business loan approvals, though cross border settlement fees remain slightly above our target threshold.",
-          "audio_duration_seconds": 666.58,
-          "processing_time_seconds": 19.997,
+          "text": "Hello Hey madam Hello please good afternoon Good afternoon. Now you are attending to Mr. Bye Bye. Okay. I am in your shift 24/7. Mahesh! Mahesh! Mahesh club! If you want to make generational wealth it's from there oh. Ah crypto dear I wish",
+          "audio_duration_seconds": 30.0,
+          "processing_time_seconds": 9.2,
           "model_load_seconds": 0.0,
-          "real_time_factor": 0.03,
-          "speed_factor": 33.33,
-          "throughput_wps": 1.8,
-          "word_count": 36,
+          "real_time_factor": 0.3067,
+          "speed_factor": 3.26,
+          "throughput_wps": 4.78,
+          "word_count": 44,
           "utterance_count": 0,
-          "cost_usd": 0.02222,
+          "cost_usd": 0.001,
           "error": null,
-          "mode": "mock",
+          "mode": "live",
           "segments": []
         },
         "cross_model_comparison": {
           "status": "ok",
-          "wer": 0.083333,
-          "wer_percent": 8.33,
-          "cer": 0.012245,
-          "cer_percent": 1.22,
-          "accuracy_percent": 91.67,
-          "substitutions": 2,
-          "deletions": 1,
-          "insertions": 0,
-          "hits": 33,
-          "char_substitutions": 0,
-          "char_deletions": 2,
-          "char_insertions": 1,
-          "char_hits": 243,
-          "ref_word_count": 36,
+          "wer": 0.454545,
+          "wer_percent": 45.45,
+          "cer": 0.368421,
+          "cer_percent": 36.84,
+          "accuracy_percent": 54.55,
+          "substitutions": 9,
+          "deletions": 10,
+          "insertions": 1,
+          "hits": 25,
+          "char_substitutions": 16,
+          "char_deletions": 63,
+          "char_insertions": 5,
+          "char_hits": 149,
+          "ref_word_count": 44,
           "hyp_word_count": 35,
-          "ref_char_count": 245,
-          "hyp_char_count": 244,
+          "ref_char_count": 228,
+          "hyp_char_count": 170,
           "vocab_diff": {
-            "ref_unique_vocab_count": 34,
-            "hyp_unique_vocab_count": 33,
-            "shared_vocab_count": 31,
-            "jaccard_similarity": 0.8611,
+            "ref_unique_vocab_count": 35,
+            "hyp_unique_vocab_count": 30,
+            "shared_vocab_count": 21,
+            "jaccard_similarity": 0.4773,
             "only_in_reference": [
-              "let",
-              "threshold",
-              "us"
+              "247",
+              "ah",
+              "are",
+              "attending",
+              "club",
+              "crypto",
+              "dear",
+              "in",
+              "mahesh",
+              "now",
+              "oh",
+              "shift",
+              "there",
+              "your"
             ],
-            "only_in_reference_total": 3,
+            "only_in_reference_total": 14,
             "only_in_hypothesis": [
-              "lets",
-              "thresholds"
+              "24",
+              "7",
+              "nadia",
+              "of",
+              "speak",
+              "students",
+              "them",
+              "turn",
+              "yoshi"
             ],
-            "only_in_hypothesis_total": 2,
+            "only_in_hypothesis_total": 9,
             "substitution_pairs": [
               {
-                "reference": "let us",
-                "hypothesis": "lets",
+                "reference": "good afternoon now you are attending",
+                "hypothesis": "nadia i turn",
                 "count": 1
               },
               {
-                "reference": "threshold",
-                "hypothesis": "thresholds",
+                "reference": "in your shift 247 mahesh mahesh mahesh club",
+                "hypothesis": "yoshi 24 7",
+                "count": 1
+              },
+              {
+                "reference": "there oh ah crypto dear",
+                "hypothesis": "them",
                 "count": 1
               }
             ]
@@ -514,74 +649,115 @@
     "aggregate": {
       "local": {
         "evaluated_files": 2,
-        "total_audio_duration_seconds": 1055.62,
-        "total_processing_time_seconds": 232.236,
-        "total_words": 81,
+        "total_audio_duration_seconds": 60.0,
+        "total_processing_time_seconds": 23.2,
+        "total_words": 39,
         "total_cost_usd": 0.0,
-        "real_time_factor": 0.22,
-        "speed_factor": 4.55,
-        "throughput_wps": 0.35
+        "real_time_factor": 0.3867,
+        "speed_factor": 2.59,
+        "throughput_wps": 1.68
       },
       "gemini": {
         "statuses": [
           "ok"
         ],
         "evaluated_files": 2,
-        "total_audio_duration_seconds": 1055.62,
-        "total_processing_time_seconds": 31.668,
-        "total_words": 83,
-        "estimated_total_cost_usd": 0.03519,
-        "real_time_factor": 0.03,
-        "speed_factor": 33.33,
-        "throughput_wps": 2.62
+        "total_audio_duration_seconds": 60.0,
+        "total_processing_time_seconds": 16.531,
+        "total_words": 62,
+        "estimated_total_cost_usd": 0.002,
+        "real_time_factor": 0.2755,
+        "speed_factor": 3.63,
+        "throughput_wps": 3.75
       },
       "cross_model_comparison": {
         "compared_files": 2,
-        "wer": 0.060241,
-        "wer_percent": 6.02,
-        "cer": 0.018803,
-        "cer_percent": 1.88,
-        "accuracy_percent": 93.98,
-        "substitutions": 3,
-        "deletions": 2,
-        "insertions": 0,
-        "hits": 78,
-        "char_substitutions": 1,
-        "char_deletions": 7,
-        "char_insertions": 3,
-        "char_hits": 577,
-        "ref_word_count": 83,
-        "hyp_word_count": 81,
-        "ref_char_count": 585,
-        "hyp_char_count": 581,
+        "wer": 0.596774,
+        "wer_percent": 59.68,
+        "cer": 0.478827,
+        "cer_percent": 47.88,
+        "accuracy_percent": 40.32,
+        "substitutions": 12,
+        "deletions": 24,
+        "insertions": 1,
+        "hits": 26,
+        "char_substitutions": 20,
+        "char_deletions": 122,
+        "char_insertions": 5,
+        "char_hits": 165,
+        "ref_word_count": 62,
+        "hyp_word_count": 39,
+        "ref_char_count": 307,
+        "hyp_char_count": 190,
         "vocab_diff": {
-          "ref_unique_vocab_count": 71,
-          "hyp_unique_vocab_count": 69,
-          "shared_vocab_count": 66,
-          "jaccard_similarity": 0.8919,
+          "ref_unique_vocab_count": 43,
+          "hyp_unique_vocab_count": 33,
+          "shared_vocab_count": 21,
+          "jaccard_similarity": 0.3818,
           "only_in_reference": [
-            "let",
-            "summary",
-            "that",
-            "threshold",
-            "us"
+            "247",
+            "ah",
+            "are",
+            "attending",
+            "can",
+            "club",
+            "crypto",
+            "dear",
+            "hear",
+            "in",
+            "league",
+            "mahesh",
+            "master",
+            "me",
+            "need",
+            "now",
+            "oh",
+            "shift",
+            "sir",
+            "talk",
+            "there",
+            "your"
           ],
-          "only_in_reference_total": 5,
+          "only_in_reference_total": 22,
           "only_in_hypothesis": [
-            "lets",
-            "summaries",
-            "thresholds"
+            "24",
+            "7",
+            "much",
+            "nadia",
+            "of",
+            "speak",
+            "students",
+            "thank",
+            "them",
+            "turn",
+            "very",
+            "yoshi"
           ],
-          "only_in_hypothesis_total": 3,
+          "only_in_hypothesis_total": 12,
           "substitution_pairs": [
             {
-              "reference": "summary let us",
-              "hypothesis": "summaries lets",
+              "reference": "can",
+              "hypothesis": "thank",
               "count": 1
             },
             {
-              "reference": "threshold",
-              "hypothesis": "thresholds",
+              "reference": "hear me need to talk can you hear me can you hear me sir league master",
+              "hypothesis": "very much",
+              "count": 1
+            },
+            {
+              "reference": "good afternoon now you are attending",
+              "hypothesis": "nadia i turn",
+              "count": 1
+            },
+            {
+              "reference": "in your shift 247 mahesh mahesh mahesh club",
+              "hypothesis": "yoshi 24 7",
+              "count": 1
+            },
+            {
+              "reference": "there oh ah crypto dear",
+              "hypothesis": "them",
               "count": 1
             }
           ]

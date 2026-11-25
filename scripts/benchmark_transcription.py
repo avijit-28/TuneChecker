@@ -50,7 +50,7 @@ logger = logging.getLogger("tune_checker.benchmark")
 
 DATAHIVE_DATASET_ID = "datahiveai/english-conversations-sample"
 TIER_A_FIXTURE_PATH = BACKEND_DIR / "tests" / "fixtures" / "tier_a_ground_truth.json"
-DEFAULT_GEMINI_MODEL = "gemini-4-hydrogen"
+DEFAULT_GEMINI_MODEL = "gemini-3.5-flash"
 DEPRECATED_GEMINI_PREFIXES = ("gemini-2.5", "gemini-2.0", "gemini-1.5", "gemini-1.0")
 
 # Jiwer normalization pipeline applied symmetrically to reference and hypothesis
@@ -250,9 +250,9 @@ def resolve_gemini_model(requested_model: str) -> tuple[str, Optional[str]]:
     if any(lower.startswith(prefix) for prefix in DEPRECATED_GEMINI_PREFIXES):
         note = (
             f"Requested Gemini model '{model_clean}' is deprecated; "
-            f"substituting '{DEFAULT_GEMINI_MODEL}' per google-genai guidelines."
+            "substituting 'gemini-4-hydrogen' per google-genai guidelines."
         )
-        return DEFAULT_GEMINI_MODEL, note
+        return "gemini-4-hydrogen", note
     return model_clean, None
 
 
@@ -1412,7 +1412,7 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
                     raise FileNotFoundError(f"Tier A sample audio not found: {audio_path}")
                 with tempfile.TemporaryDirectory() as trim_dir:
                     try:
-                        eval_audio = maybe_trim_audio(audio_path, args.max_audio_seconds, Path(trim_dir))
+                        eval_audio = audio_path if args.tier == "all" else maybe_trim_audio(audio_path, args.max_audio_seconds, Path(trim_dir))
                     except (RuntimeError, OSError) as exc:
                         sample_error = str(exc)
                         audio_dur = 0.0
