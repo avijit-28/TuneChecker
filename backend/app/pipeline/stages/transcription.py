@@ -1,7 +1,11 @@
+import concurrent.futures
+import logging
 import os
 import tempfile
 import uuid
 from pathlib import Path
+
+logger = logging.getLogger("tunechecker.transcription")
 from sqlalchemy.orm import Session
 from app.config import settings
 from app.db.models.calls import Call
@@ -38,8 +42,14 @@ def surgically_infill_segments(aligned_segments: list, wav_path: Path) -> list:
     try:
         from google import genai
         from google.genai import types
-        # Set strict 4s timeout so it NEVER hangs on 503/429
-        client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=4000))
+        # Set strict 4s timeout and disable SDK retries (attempts=1) so it NEVER hangs on 503/429
+        client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(
+                timeout=4000,
+                retry_options=types.HttpRetryOptions(attempts=1),
+            ),
+        )
         from app.audio.ffmpeg import run_ffmpeg
 
         for idx, seg in candidates:
@@ -59,29 +69,21 @@ def surgically_infill_segments(aligned_segments: list, wav_path: Path) -> list:
                 ]
                 proc = run_ffmpeg(cut_args, timeout=5)
                 if proc.returncode == 0 and slice_path.exists() and slice_path.stat().st_size > 1000:
-                    uploaded = client.files.upload(file=str(slice_path))
-                    resp = client.interactions.create(
-                        model="gemini-3.5-flash",
-                        input=[
-                            {"type": "audio", "uri": uploaded.uri, "mime_type": "audio/wav"},
-                            {"type": "text", "text": "Transcribe this short audio snippet verbatim in plain text. Only return the spoken words, nothing else."}
+                    slice_bytes = slice_path.read_bytes()
+                    resp = client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=[
+                            types.Part.from_bytes(data=slice_bytes, mime_type="audio/wav"),
+                            "Transcribe this short audio snippet verbatim in plain text. Only return the spoken words, nothing else.",
                         ],
-                        store=False
                     )
-                    infill_text = getattr(resp, "output_text", "")
-                    if not infill_text:
-                        for step in getattr(resp, "steps", None) or []:
-                            if getattr(step, "type", None) in (None, "model_output"):
-                                for item in getattr(step, "content", None) or []:
-                                    t = getattr(item, "text", "")
-                                    if t:
-                                        infill_text += t
-                    infill_text = infill_text.strip()
+                    infill_text = (getattr(resp, "text", None) or "").strip()
                     if infill_text and len(infill_text) > 1 and not infill_text.lower().startswith("inaudible"):
                         seg.text = infill_text
                         seg.confidence = 0.95
-            except Exception:
+            except Exception as exc:
                 # If Gemini is busy, rate-limited (429/503), or times out, immediately break to avoid delaying transcription!
+                logger.warning(f"Surgical infill skipped due to Gemini error: {exc}")
                 break
             finally:
                 if slice_path.exists():
@@ -89,9 +91,9 @@ def surgically_infill_segments(aligned_segments: list, wav_path: Path) -> list:
                         slice_path.unlink()
                     except Exception:
                         pass
-    except Exception:
+    except Exception as exc:
         # Fallback gracefully if API or network is unavailable
-        pass
+        logger.warning(f"Surgical infill unavailable: {exc}")
 
     return aligned_segments
 
@@ -109,8 +111,15 @@ def run_transcription_stage(db: Session, call_id: str) -> dict:
         # Align utterances to acoustic speaker turns (A / B)
         aligned_segments = align_segments_to_speakers(stt_result.segments, wav_path=wav_path)
 
-        # Apply surgical infilling for low-confidence gaps via Gemini Audio
-        aligned_segments = surgically_infill_segments(aligned_segments, wav_path)
+        # Apply surgical infilling for low-confidence gaps via Gemini Audio (hard 8s wall-clock cap)
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(surgically_infill_segments, aligned_segments, wav_path)
+        try:
+            aligned_segments = future.result(timeout=8.0)
+        except concurrent.futures.TimeoutError:
+            logger.warning("Surgical infill exceeded 8s wall-clock limit; continuing with local Faster-Whisper output.")
+        finally:
+            executor.shutdown(wait=False)
 
     speaker_labels = sorted(list({seg.speaker_label for seg in aligned_segments if seg.speaker_label}))
     if not speaker_labels:

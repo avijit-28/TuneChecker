@@ -11,7 +11,7 @@ logger = logging.getLogger("tune_checker.llm.gemini")
 class GeminiLlmProvider(BaseLlmProvider):
     """Google Gemini LLM provider for zero-failure fallback and cloud reasoning."""
 
-    def __init__(self, api_key: str = None, model: str = "gemini-3.5-flash"):
+    def __init__(self, api_key: str = None, model: str = "gemini-2.5-flash"):
         self.api_key = api_key or settings.GEMINI_API_KEY
         if not self.api_key:
             raise AppError("CONFIG_ERROR", "GEMINI_API_KEY is not configured.", 500)
@@ -19,8 +19,15 @@ class GeminiLlmProvider(BaseLlmProvider):
 
     def generate_json(self, system_prompt: str, user_prompt: str) -> dict[str, Any]:
         from google import genai
+        from google.genai import types
 
-        client = genai.Client(api_key=self.api_key)
+        client = genai.Client(
+            api_key=self.api_key,
+            http_options=types.HttpOptions(
+                timeout=20000,
+                retry_options=types.HttpRetryOptions(attempts=1),
+            ),
+        )
         combined_prompt = (
             f"SYSTEM INSTRUCTIONS:\n{system_prompt}\n\n"
             f"USER REQUEST:\n{user_prompt}\n\n"
@@ -28,20 +35,11 @@ class GeminiLlmProvider(BaseLlmProvider):
         )
 
         try:
-            interaction = client.interactions.create(
+            resp = client.models.generate_content(
                 model=self.model,
-                input=combined_prompt,
-                store=False,
+                contents=combined_prompt,
             )
-            content = getattr(interaction, "output_text", "")
-            if not content:
-                for step in getattr(interaction, "steps", None) or []:
-                    if getattr(step, "type", None) in (None, "model_output"):
-                        for item in getattr(step, "content", None) or []:
-                            t = getattr(item, "text", "")
-                            if t:
-                                content += t
-            content = content.strip()
+            content = (getattr(resp, "text", None) or "").strip()
             if content.startswith("```"):
                 content = re.sub(r"^```(?:json)?\s*", "", content)
                 content = re.sub(r"\s*```$", "", content)
