@@ -152,8 +152,8 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ minWidth: '280px', flex: '1 1 auto' }}>
           <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
             Analysis Settings & Criteria
           </h1>
@@ -162,7 +162,7 @@ export const SettingsPage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
           <button
             type="button"
             onClick={handleReset}

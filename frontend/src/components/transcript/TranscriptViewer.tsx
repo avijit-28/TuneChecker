@@ -82,7 +82,7 @@ export const TranscriptViewer: React.FC<TranscriptViewerProps> = ({
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <div
             style={{
               display: 'flex',
@@ -106,7 +106,7 @@ export const TranscriptViewer: React.FC<TranscriptViewerProps> = ({
                 fontSize: '13px',
                 color: 'var(--color-text-primary)',
                 outline: 'none',
-                width: '140px',
+                width: '130px',
               }}
             />
           </div>
@@ -127,6 +127,7 @@ export const TranscriptViewer: React.FC<TranscriptViewerProps> = ({
                 fontSize: '12px',
                 fontWeight: 600,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
               }}
               title="Toggle automatic transcript scrolling during audio playback"
             >
@@ -142,7 +143,7 @@ export const TranscriptViewer: React.FC<TranscriptViewerProps> = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                padding: '6px 12px',
+                padding: '6px 10px',
                 fontSize: '12px',
                 fontWeight: 600,
                 color: 'var(--color-primary)',
@@ -150,10 +151,11 @@ export const TranscriptViewer: React.FC<TranscriptViewerProps> = ({
                 border: '1px solid var(--color-primary-border)',
                 borderRadius: '8px',
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
               }}
             >
               <UserCog size={14} />
-              Change Speaker Roles
+              Change Roles
             </button>
           )}
         </div>
