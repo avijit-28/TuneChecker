@@ -117,6 +117,7 @@ class Settings(BaseSettings):
     LLM_FALLBACK_PROVIDER: Optional[str] = "gemini"
     LLM_RETRY_ATTEMPTS: int = 2
     MIN_CONFIDENCE_FOR_VERDICT: float = 0.70
+    REDACT_PII: bool = False
 
     # Alerts & Notifications
     ALERT_WEBHOOK_URL: Optional[str] = None

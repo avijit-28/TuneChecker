@@ -9,6 +9,7 @@ from app.db.models.transcripts import Transcript
 from app.db.models.speaker_roles import SpeakerRole
 from app.db.models.utterances import Utterance
 from app.audio.normalize import normalize_to_wav
+from app.utils.pii import redact_pii
 from app.pipeline.providers.stt.faster_whisper import FasterWhisperProvider
 from app.pipeline.safeguards.speaker_alignment import align_segments_to_speakers
 
@@ -66,7 +67,7 @@ def run_transcription_stage(db: Session, call_id: str) -> dict:
             speaker_label=seg.speaker_label or "A",
             start_ms=seg.start_ms,
             end_ms=seg.end_ms,
-            text=seg.text,
+            text=redact_pii(seg.text) if getattr(settings, "REDACT_PII", False) else seg.text,
             asr_confidence=seg.confidence,
             low_attribution=0
         )

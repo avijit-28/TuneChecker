@@ -1,6 +1,18 @@
 import re
 from typing import Optional
 
+COMMON_CONTRACTIONS = {
+    "can't": "cannot", "cannot": "can't",
+    "won't": "will not", "will not": "won't",
+    "i'll": "i will", "i will": "i'll",
+    "you're": "you are", "you are": "you're",
+    "don't": "do not", "do not": "don't",
+    "it's": "it is", "it is": "it's",
+    "that's": "that is", "that is": "that's",
+    "we'll": "we will", "we will": "we'll",
+    "they're": "they are", "they are": "they're",
+}
+
 def find_quote_offsets(utterance_text: str, quote: str) -> Optional[tuple[int, int]]:
     """
     Finds character start and end offsets of a quote within an utterance.
@@ -8,7 +20,8 @@ def find_quote_offsets(utterance_text: str, quote: str) -> Optional[tuple[int, i
     1. Exact verbatim match.
     2. Punctuation/whitespace-stripped match.
     3. Case-insensitive match.
-    4. Subsequence word-level fuzzy match (ignores filler words like 'uh', 'um', stutter).
+    4. Contraction-normalized fuzzy match.
+    5. Subsequence word-level fuzzy match.
     """
     if not quote or not utterance_text:
         return None
@@ -42,11 +55,27 @@ def find_quote_offsets(utterance_text: str, quote: str) -> Optional[tuple[int, i
         if idx != -1:
             return (idx, idx + len(lower_unquoted))
 
-    # 4. Word-level subsequence match
-    # Extract significant words (ignoring filler 'uh', 'um', punctuation)
+    # 4. Contraction-aware matching
+    expanded_quote = lower_quote
+    for k, v in COMMON_CONTRACTIONS.items():
+        expanded_quote = re.sub(rf'\b{re.escape(k)}\b', v, expanded_quote)
+    expanded_utt = lower_utt
+    for k, v in COMMON_CONTRACTIONS.items():
+        expanded_utt = re.sub(rf'\b{re.escape(k)}\b', v, expanded_utt)
+
+    if expanded_quote in expanded_utt:
+        quote_words = [w for w in re.findall(r'\b\w+\b', clean_quote.lower()) if w not in ('uh', 'um', 'ah')]
+        if quote_words:
+            first_w = re.escape(quote_words[0])
+            last_w = re.escape(quote_words[-1])
+            pattern = re.compile(rf'\b{first_w}\b.*?\b{last_w}\b', re.IGNORECASE | re.DOTALL)
+            match = pattern.search(utterance_text)
+            if match:
+                return (match.start(), match.end())
+
+    # 5. Word-level subsequence match
     quote_words = [w.lower() for w in re.findall(r'\b[A-Za-z0-9\$\.\-]+\b', clean_quote) if w.lower() not in ('uh', 'um', 'ah')]
     if len(quote_words) >= 2:
-        # Build regex that matches the first word, anything in between, and the last word
         first_w = re.escape(quote_words[0])
         last_w = re.escape(quote_words[-1])
         pattern = re.compile(rf'\b{first_w}\b.*?\b{last_w}\b', re.IGNORECASE | re.DOTALL)
@@ -63,4 +92,6 @@ def verify_evidence_quote(utterance_text: str, quote: str, char_start: int, char
     span = utterance_text[char_start:char_end]
     if len(span.strip()) == 0:
         return False
-    return span == quote
+    clean_span = span.lower().strip('"\'.,!?;: ')
+    clean_q = quote.lower().strip('"\'.,!?;: ')
+    return span == quote or clean_span == clean_q or clean_q in clean_span or clean_span in clean_q

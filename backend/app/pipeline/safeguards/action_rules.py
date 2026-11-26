@@ -1,6 +1,7 @@
 import re
 from typing import Any
 from app.pipeline.safeguards.quote_matcher import find_quote_offsets
+from app.utils.dates import normalize_relative_deadline
 
 def extract_heuristic_action_candidates(utterances: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
@@ -41,7 +42,7 @@ def extract_heuristic_action_candidates(utterances: list[dict[str, Any]]) -> lis
                 if not dl_match and idx_u + 1 < len(utterances):
                     next_text = utterances[idx_u + 1].get("text", "")
                     dl_match = deadline_regex.search(next_text)
-                deadline = dl_match.group(0) if dl_match else None
+                deadline = normalize_relative_deadline(dl_match.group(0)) if dl_match else None
 
                 # Clean task summary
                 task_text = full_clause
