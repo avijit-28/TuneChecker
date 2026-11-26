@@ -25,8 +25,10 @@ async def upload_call(
     response: Response,
     file: UploadFile = File(...),
     language_mode: Optional[str] = Form(None),
+    force_reanalyze: bool = Form(False),
     db: Session = Depends(get_db)
 ):
+    import hashlib
     if language_mode:
         settings.WHISPER_LANGUAGE_MODE = language_mode.strip().lower()
     sanitized_name = validate_filename_and_mime(file.filename, file.content_type)
@@ -40,6 +42,7 @@ async def upload_call(
     max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
     total_bytes = 0
     header_bytes = b""
+    hasher = hashlib.sha256()
 
     try:
         with open(dest_path, "wb") as f:
@@ -47,6 +50,7 @@ async def upload_call(
                 if len(header_bytes) < 32:
                     header_bytes += chunk[: 32 - len(header_bytes)]
                 total_bytes += len(chunk)
+                hasher.update(chunk)
                 if total_bytes > max_bytes:
                     raise AppError(
                         "FILE_TOO_LARGE",
@@ -70,10 +74,17 @@ async def upload_call(
             os.remove(dest_path)
         raise AppError("INVALID_FILE_TYPE", f"File header does not match expected audio container format for '{ext}'.", 415)
 
-    call = CallService.create_call(db, sanitized_name, total_bytes, storage_key)
+    audio_hash = hasher.hexdigest()
+    call = CallService.create_call(db, sanitized_name, total_bytes, storage_key, audio_hash=audio_hash)
 
-    # Queue async processing
-    queue_call_processing(call.id, start_stage="validation")
+    # Fast Fingerprint Deduplication Cache
+    existing_completed = CallService.find_completed_by_hash(db, audio_hash) if not force_reanalyze else None
+    if existing_completed and existing_completed.id != call.id:
+        # Instant cache hit: Clone previous analysis without burning Whisper or LLM tokens!
+        CallService.clone_completed_analysis(db, existing_completed.id, call)
+    else:
+        # First time seeing this audio: queue full async pipeline
+        queue_call_processing(call.id, start_stage="validation")
 
     response.headers["Location"] = f"/api/v1/calls/{call.id}/status"
     return {
@@ -81,7 +92,8 @@ async def upload_call(
         "name": call.original_filename,
         "status": call.status,
         "size_bytes": call.size_bytes,
-        "created_at": call.created_at
+        "created_at": call.created_at,
+        "cached": bool(existing_completed)
     }
 
 @router.get("", response_model=CallListResponse)

@@ -9,6 +9,7 @@ class Call(Base):
     id = Column(String, primary_key=True)
     original_filename = Column(String, nullable=False)
     storage_key = Column(String, unique=True, nullable=True)
+    audio_hash = Column(String, index=True, nullable=True)
     audio_deleted_at = Column(DateTime, nullable=True)
     size_bytes = Column(Integer, nullable=False)
     duration_ms = Column(Integer, nullable=True)

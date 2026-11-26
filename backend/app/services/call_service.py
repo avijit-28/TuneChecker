@@ -23,12 +23,13 @@ def get_status_group(status: str) -> str:
 
 class CallService:
     @staticmethod
-    def create_call(db: Session, filename: str, size_bytes: int, storage_key: str) -> Call:
+    def create_call(db: Session, filename: str, size_bytes: int, storage_key: str, audio_hash: Optional[str] = None) -> Call:
         call_id = str(uuid.uuid4())
         call = Call(
             id=call_id,
             original_filename=filename,
             storage_key=storage_key,
+            audio_hash=audio_hash,
             size_bytes=size_bytes,
             status="uploaded",
             attempt_count=1,
@@ -38,6 +39,151 @@ class CallService:
         db.commit()
         db.refresh(call)
         return call
+
+    @staticmethod
+    def find_completed_by_hash(db: Session, audio_hash: str) -> Optional[Call]:
+        if not audio_hash:
+            return None
+        return (
+            db.query(Call)
+            .filter(Call.audio_hash == audio_hash, Call.status == "complete")
+            .order_by(Call.created_at.desc())
+            .first()
+        )
+
+    @staticmethod
+    def clone_completed_analysis(db: Session, source_call_id: str, target_call: Call) -> bool:
+        source_call = db.query(Call).filter(Call.id == source_call_id).first()
+        if not source_call or source_call.status != "complete":
+            return False
+
+        target_call.duration_ms = source_call.duration_ms
+
+        # Clone Transcript
+        if source_call.transcript:
+            st = source_call.transcript
+            target_t = Transcript(
+                call_id=target_call.id,
+                status=st.status,
+                provider=st.provider,
+                model=st.model,
+                language=st.language,
+                speaker_count=st.speaker_count,
+                audio_seconds=st.audio_seconds,
+                raw_response=st.raw_response
+            )
+            db.add(target_t)
+
+        # Clone Utterances
+        source_utts = db.query(Utterance).filter(Utterance.call_id == source_call_id).order_by(Utterance.idx.asc()).all()
+        utt_id_map = {}
+        for u in source_utts:
+            new_uid = str(uuid.uuid4())
+            utt_id_map[u.id] = new_uid
+            new_u = Utterance(
+                id=new_uid,
+                call_id=target_call.id,
+                idx=u.idx,
+                speaker_label=u.speaker_label,
+                start_ms=u.start_ms,
+                end_ms=u.end_ms,
+                text=u.text,
+                asr_confidence=u.asr_confidence,
+                low_attribution=u.low_attribution
+            )
+            db.add(new_u)
+
+        # Clone Speaker Roles
+        source_roles = db.query(SpeakerRole).filter(SpeakerRole.call_id == source_call_id).all()
+        for r in source_roles:
+            new_r = SpeakerRole(
+                call_id=target_call.id,
+                speaker_label=r.speaker_label,
+                role=r.role,
+                source=r.source,
+                status=r.status,
+                level=r.level
+            )
+            db.add(new_r)
+
+        # Clone Analysis
+        source_analysis = (
+            db.query(Analysis)
+            .filter(Analysis.call_id == source_call_id)
+            .order_by(Analysis.run_number.desc())
+            .first()
+        )
+        if source_analysis:
+            new_aid = str(uuid.uuid4())
+            new_analysis = Analysis(
+                id=new_aid,
+                call_id=target_call.id,
+                run_number=1,
+                settings_version=source_analysis.settings_version,
+                status=source_analysis.status,
+                verdict=source_analysis.verdict,
+                confidence_level=source_analysis.confidence_level,
+                rep_speaker_label=source_analysis.rep_speaker_label,
+                roles_source=source_analysis.roles_source,
+                rubric_version=source_analysis.rubric_version,
+                created_at=datetime.utcnow()
+            )
+            db.add(new_analysis)
+
+            # Clone Evidence Items
+            for ev in source_analysis.evidence_items:
+                mapped_uid = utt_id_map.get(ev.utterance_id)
+                new_ev = EvidenceItem(
+                    id=str(uuid.uuid4()),
+                    analysis_id=new_aid,
+                    utterance_id=mapped_uid,
+                    criterion_id=ev.criterion_id,
+                    severity=ev.severity,
+                    quote=ev.quote,
+                    char_start=ev.char_start,
+                    char_end=ev.char_end,
+                    rationale=ev.rationale,
+                    confidence=ev.confidence
+                )
+                db.add(new_ev)
+
+            # Clone Action Items
+            for ai in source_analysis.action_items:
+                mapped_uid = utt_id_map.get(ai.utterance_id)
+                new_ai = ActionItem(
+                    id=str(uuid.uuid4()),
+                    analysis_id=new_aid,
+                    utterance_id=mapped_uid,
+                    task_summary=ai.task_summary,
+                    type=ai.type,
+                    modality=ai.modality,
+                    owner_text=ai.owner_text,
+                    owner_basis=ai.owner_basis,
+                    deadline_text=ai.deadline_text,
+                    quote=ai.quote,
+                    char_start=ai.char_start,
+                    char_end=ai.char_end
+                )
+                db.add(new_ai)
+
+            # Clone Coaching Recommendations
+            for cr in source_analysis.coaching_recommendations:
+                mapped_uid = utt_id_map.get(cr.utterance_id) if cr.utterance_id else None
+                new_cr = CoachingRecommendation(
+                    id=str(uuid.uuid4()),
+                    analysis_id=new_aid,
+                    ref=cr.ref,
+                    category=cr.category,
+                    recommendation=cr.recommendation,
+                    context_quote=cr.context_quote,
+                    severity=cr.severity,
+                    utterance_id=mapped_uid
+                )
+                db.add(new_cr)
+
+        target_call.status = "complete"
+        db.commit()
+        return True
 
     @staticmethod
     def list_calls(
