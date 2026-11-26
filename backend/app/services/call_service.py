@@ -113,6 +113,13 @@ class CallService:
             .order_by(Analysis.run_number.desc())
             .first()
         )
+        # Check if target_call already has an analysis
+        existing_target_analysis = db.query(Analysis).filter(Analysis.call_id == target_call.id).first()
+        if existing_target_analysis:
+            target_call.status = "complete"
+            db.commit()
+            return True
+
         if source_analysis:
             new_aid = str(uuid.uuid4())
             new_analysis = Analysis(
@@ -123,9 +130,15 @@ class CallService:
                 status=source_analysis.status,
                 verdict=source_analysis.verdict,
                 confidence_level=source_analysis.confidence_level,
+                confidence_factors=source_analysis.confidence_factors,
+                limited_evidence_reason=source_analysis.limited_evidence_reason,
+                explanation=source_analysis.explanation,
                 rep_speaker_label=source_analysis.rep_speaker_label,
                 roles_source=source_analysis.roles_source,
-                rubric_version=source_analysis.rubric_version,
+                dropped_evidence_count=source_analysis.dropped_evidence_count,
+                dropped_details=source_analysis.dropped_details,
+                model_name=source_analysis.model_name,
+                prompt_version=source_analysis.prompt_version,
                 created_at=datetime.utcnow()
             )
             db.add(new_analysis)
@@ -153,16 +166,20 @@ class CallService:
                 new_ai = ActionItem(
                     id=str(uuid.uuid4()),
                     analysis_id=new_aid,
-                    utterance_id=mapped_uid,
-                    task_summary=ai.task_summary,
+                    call_id=target_call.id,
+                    ref=ai.ref,
                     type=ai.type,
+                    task=ai.task,
                     modality=ai.modality,
                     owner_text=ai.owner_text,
                     owner_basis=ai.owner_basis,
                     deadline_text=ai.deadline_text,
+                    utterance_id=mapped_uid,
+                    speaker_label=ai.speaker_label,
                     quote=ai.quote,
                     char_start=ai.char_start,
-                    char_end=ai.char_end
+                    char_end=ai.char_end,
+                    created_at=datetime.utcnow()
                 )
                 db.add(new_ai)
 
@@ -172,12 +189,14 @@ class CallService:
                 new_cr = CoachingRecommendation(
                     id=str(uuid.uuid4()),
                     analysis_id=new_aid,
+                    call_id=target_call.id,
                     ref=cr.ref,
                     category=cr.category,
                     recommendation=cr.recommendation,
                     context_quote=cr.context_quote,
                     severity=cr.severity,
-                    utterance_id=mapped_uid
+                    utterance_id=mapped_uid,
+                    created_at=datetime.utcnow()
                 )
                 db.add(new_cr)
 
@@ -379,8 +398,23 @@ class CallService:
         )
         partial_reason = latest_analysis.partial_reason if latest_analysis else None
 
+        activity_map = {
+            "validation": "Validating audio headers, container format, and volume dynamic range...",
+            "transcription": "Running Faster-Whisper ASR to decode speech into timestamped utterances...",
+            "speaker_identification": "Separating speaker acoustics and inferring Sales Representative vs Customer roles...",
+            "tone_analysis": "Auditing sales rep utterances against tone criteria (Rude, Hostile, Dismissive)...",
+            "evidence_extraction": "Verifying verbatim quote spans and anchoring evidence to canonical transcript...",
+            "action_items": "Extracting commitments, follow-up promises, and normalizing deadlines...",
+            "completion": "Compiling final audit report, metrics, and coaching guidance..."
+        }
+        current_activity = activity_map.get(current_stage, "Processing audio...") if current_stage else ("Audit complete" if c.status == "complete" else "Queued for audit...")
+
         return {
             "call_id": c.id,
+            "filename": c.original_filename,
+            "size_bytes": c.size_bytes,
+            "duration_ms": c.duration_ms,
+            "current_activity": current_activity,
             "status": c.status,
             "status_group": get_status_group(c.status),
             "current_stage": current_stage,

@@ -3,10 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Stepper } from '../components/processing/Stepper';
 import type { StageInfo } from '../components/processing/Stepper';
 import { apiRequest } from '../api/client';
-import { AlertOctagon, ArrowLeft } from 'lucide-react';
+import { AlertOctagon, ArrowLeft, FileAudio, Clock, HardDrive, Activity } from 'lucide-react';
 
 interface CallStatusData {
   call_id: string;
+  filename?: string | null;
+  size_bytes?: number | null;
+  duration_ms?: number | null;
+  current_activity?: string | null;
   status: string;
   status_group: string;
   current_stage: string | null;
@@ -137,6 +141,68 @@ export const ProcessingPage: React.FC = () => {
         >
           <AlertOctagon size={18} />
           <span>{error}</span>
+        </div>
+      )}
+
+      {statusData && (
+        <div style={{ maxWidth: '680px', margin: '0 auto 24px auto' }}>
+          {/* File Metadata Overview Card */}
+          <div
+            style={{
+              padding: '16px 20px',
+              borderRadius: '12px',
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              marginBottom: '16px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <FileAudio size={22} color="var(--color-primary)" />
+              <div>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                  {statusData.filename || 'Audio Recording'}
+                </div>
+                <div style={{ display: 'flex', gap: '14px', fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '2px' }}>
+                  {statusData.duration_ms && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Clock size={12} /> {(statusData.duration_ms / 1000).toFixed(1)}s duration
+                    </span>
+                  )}
+                  {statusData.size_bytes && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <HardDrive size={12} /> {(statusData.size_bytes / (1024 * 1024)).toFixed(2)} MB
+                    </span>
+                  )}
+                  <span>Status: <strong style={{ color: 'var(--color-primary)' }}>{statusData.status}</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Live Current Activity Banner */}
+          {statusData.status_group === 'in_progress' && statusData.current_activity && (
+            <div
+              style={{
+                padding: '14px 18px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+              }}
+            >
+              <Activity size={18} color="var(--color-primary)" className="animate-pulse" />
+              <div style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>
+                <strong>Current Stage Activity:</strong> {statusData.current_activity}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

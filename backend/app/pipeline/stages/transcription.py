@@ -37,7 +37,9 @@ def surgically_infill_segments(aligned_segments: list, wav_path: Path) -> list:
 
     try:
         from google import genai
-        client = genai.Client(api_key=api_key)
+        from google.genai import types
+        # Set strict 4s timeout so it NEVER hangs on 503/429
+        client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=4000))
         from app.audio.ffmpeg import run_ffmpeg
 
         for idx, seg in candidates:
@@ -55,7 +57,7 @@ def surgically_infill_segments(aligned_segments: list, wav_path: Path) -> list:
                     "-c:a", "pcm_s16le",
                     str(slice_path)
                 ]
-                proc = run_ffmpeg(cut_args, timeout=10)
+                proc = run_ffmpeg(cut_args, timeout=5)
                 if proc.returncode == 0 and slice_path.exists() and slice_path.stat().st_size > 1000:
                     uploaded = client.files.upload(file=str(slice_path))
                     resp = client.interactions.create(
@@ -78,6 +80,9 @@ def surgically_infill_segments(aligned_segments: list, wav_path: Path) -> list:
                     if infill_text and len(infill_text) > 1 and not infill_text.lower().startswith("inaudible"):
                         seg.text = infill_text
                         seg.confidence = 0.95
+            except Exception:
+                # If Gemini is busy, rate-limited (429/503), or times out, immediately break to avoid delaying transcription!
+                break
             finally:
                 if slice_path.exists():
                     try:

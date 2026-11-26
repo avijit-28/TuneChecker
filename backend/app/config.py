@@ -92,7 +92,7 @@ class Settings(BaseSettings):
     WHISPER_NO_SPEECH_THRESHOLD: float = 0.85
     WHISPER_LOG_PROB_THRESHOLD: float = -2.5
     WHISPER_CONDITION_ON_PREVIOUS_TEXT: bool = False
-    WHISPER_BEAM_SIZE: int = 5
+    WHISPER_BEAM_SIZE: int = 1  # Fast greedy CPU inference (3x-5x faster than beam 5)
     WHISPER_INITIAL_PROMPT: Optional[str] = "Customer sales call, product orders, quantities, pricing, delivery, Hindi and English conversation."
     
     # LLM Settings (Zero-Cost Local Ollama)

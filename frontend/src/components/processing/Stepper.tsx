@@ -36,6 +36,16 @@ const STAGE_TITLES: Record<string, string> = {
   completion: '7. Finalizing Call Audit Report',
 };
 
+const STAGE_DESCRIPTIONS: Record<string, string> = {
+  validation: 'Validating container format, duration limits, and applying EBU R128 loudness bandpass filter.',
+  transcription: 'Decoding speech to text using Faster-Whisper ASR with sales domain context hints.',
+  speaker_identification: 'Diarizing speech turns and classifying Sales Representative vs Customer roles.',
+  tone_analysis: 'Auditing representative statements for rude, hostile, or dismissive violations.',
+  evidence_extraction: 'Matching exact transcript quote spans and verifying severity thresholds.',
+  action_items: 'Detecting commitments, follow-ups, modality, and calendar deadlines.',
+  completion: 'Compiling final audit report, speech recovery metrics, and coaching guidance.',
+};
+
 export const Stepper: React.FC<StepperProps> = ({
   stages,
   completedCount,
@@ -115,17 +125,28 @@ export const Stepper: React.FC<StepperProps> = ({
                   )}
                 </div>
 
-                {st.message && (
-                  <div
-                    style={{
-                      fontSize: '13px',
-                      color: isFailed ? 'var(--error-fg)' : 'var(--color-text-secondary)',
-                      marginTop: '4px',
-                    }}
-                  >
-                    {st.message}
-                  </div>
-                )}
+                <div
+                  style={{
+                    fontSize: '13px',
+                    color: isFailed
+                      ? 'var(--error-fg)'
+                      : isRunning
+                      ? 'var(--color-primary)'
+                      : isSuccess
+                      ? 'var(--color-text-secondary)'
+                      : 'var(--color-text-tertiary)',
+                    marginTop: '4px',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {st.message ? (
+                    <span><strong>Result:</strong> {st.message}</span>
+                  ) : isRunning ? (
+                    <span><strong>In Progress:</strong> {STAGE_DESCRIPTIONS[st.stage]}</span>
+                  ) : (
+                    <span>{STAGE_DESCRIPTIONS[st.stage]}</span>
+                  )}
+                </div>
 
                 {isFailed && onRetry && (
                   <div style={{ marginTop: '10px' }}>

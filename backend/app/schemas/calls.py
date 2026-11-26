@@ -45,6 +45,10 @@ class StageStatus(BaseModel):
 
 class CallStatusResponse(BaseModel):
     call_id: str
+    filename: Optional[str] = None
+    size_bytes: Optional[int] = None
+    duration_ms: Optional[int] = None
+    current_activity: Optional[str] = None
     status: str
     status_group: str
     current_stage: Optional[str] = None
