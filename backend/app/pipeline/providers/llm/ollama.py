@@ -12,6 +12,15 @@ class OllamaLlmProvider(BaseLlmProvider):
         self.model = model or settings.LLM_MODEL
         self.endpoint = f"{self.base_url.rstrip('/')}/api/chat"
 
+    def _try_gemini_fallback(self, system_prompt: str, user_prompt: str):
+        if getattr(settings, "LLM_FALLBACK_PROVIDER", None) == "gemini" and getattr(settings, "GEMINI_API_KEY", None):
+            try:
+                from app.pipeline.providers.llm.gemini import GeminiLlmProvider
+                return GeminiLlmProvider().generate_json(system_prompt, user_prompt)
+            except Exception:
+                return None
+        return None
+
     def generate_json(self, system_prompt: str, user_prompt: str) -> dict[str, Any]:
         payload = {
             "model": self.model,
@@ -30,14 +39,18 @@ class OllamaLlmProvider(BaseLlmProvider):
 
         try:
             response = httpx.post(self.endpoint, json=payload, timeout=settings.LLM_TIMEOUT_SEC)
-        except httpx.ConnectError:
-            raise AppError("LLM_UNAVAILABLE", "Ollama local service is not reachable on port 11434.", 503, retryable=True)
-        except httpx.TimeoutException:
-            raise AppError("LLM_TIMEOUT", f"Ollama generation timed out after {settings.LLM_TIMEOUT_SEC}s.", 504, retryable=True)
-        except Exception as e:
+        except (httpx.ConnectError, httpx.TimeoutException, Exception) as e:
+            fallback = self._try_gemini_fallback(system_prompt, user_prompt)
+            if fallback is not None:
+                return fallback
+            if isinstance(e, httpx.TimeoutException):
+                raise AppError("LLM_TIMEOUT", f"Ollama generation timed out after {settings.LLM_TIMEOUT_SEC}s.", 504, retryable=True)
             raise AppError("LLM_UNAVAILABLE", f"Failed to communicate with Ollama: {str(e)}", 503, retryable=True)
 
         if response.status_code != 200:
+            fallback = self._try_gemini_fallback(system_prompt, user_prompt)
+            if fallback is not None:
+                return fallback
             raise AppError("LLM_UNAVAILABLE", f"Ollama returned HTTP {response.status_code}: {response.text}", 503, retryable=True)
 
         try:

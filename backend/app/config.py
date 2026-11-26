@@ -113,6 +113,15 @@ class Settings(BaseSettings):
     RATE_LIMIT_UPLOADS_PER_HOUR: int = 20
     DAILY_ANALYSIS_LIMIT: int = 50
     
+    # Resilience & Fallback Settings
+    LLM_FALLBACK_PROVIDER: Optional[str] = "gemini"
+    LLM_RETRY_ATTEMPTS: int = 2
+    MIN_CONFIDENCE_FOR_VERDICT: float = 0.70
+
+    # Alerts & Notifications
+    ALERT_WEBHOOK_URL: Optional[str] = None
+    ALERT_ON_RED_ONLY: bool = True
+
     # Security / CORS
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
     HUGGINGFACE_TOKEN: Optional[str] = None
