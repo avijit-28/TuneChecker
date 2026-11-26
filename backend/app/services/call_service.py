@@ -197,9 +197,8 @@ class CallService:
     ) -> tuple[list[dict[str, Any]], int]:
         query = db.query(Call)
 
-        if q:
-            escaped_q = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-            query = query.filter(Call.original_filename.ilike(f"%{escaped_q}%"))
+        if q and q.strip():
+            query = query.filter(Call.original_filename.icontains(q.strip(), autoescape=True))
 
         if status_filter:
             if status_filter == "in_progress":

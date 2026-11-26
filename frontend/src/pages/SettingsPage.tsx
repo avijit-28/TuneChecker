@@ -313,6 +313,48 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Section 1b: Minimum Confidence Slider */}
+      <div
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          borderRadius: '12px',
+          border: '1px solid var(--color-border)',
+          padding: '20px',
+          marginBottom: '20px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+            Minimum Evaluation Confidence Threshold
+          </h3>
+          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-primary)' }}>
+            {Math.round(((config.tone as any).min_confidence ?? 0.70) * 100)}%
+          </span>
+        </div>
+        <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+          Calls with evaluation confidence below this threshold will be flagged as NEEDS_REVIEW / Ambiguous instead of issuing a final RED verdict.
+        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>50%</span>
+          <input
+            type="range"
+            min="0.50"
+            max="0.95"
+            step="0.05"
+            value={(config.tone as any).min_confidence ?? 0.70}
+            onChange={(e) =>
+              setConfig({
+                ...config,
+                tone: { ...config.tone, min_confidence: parseFloat(e.target.value) } as any,
+              })
+            }
+            style={{ flex: 1, accentColor: 'var(--color-primary)', cursor: 'pointer' }}
+          />
+          <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>95%</span>
+        </div>
+      </div>
+
       {/* Section 2: Tone Criteria */}
       <div
         style={{
