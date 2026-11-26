@@ -19,14 +19,16 @@ def try_repair_audio(input_path: Path, repaired_path: Path) -> bool:
 def normalize_to_wav(input_path: Path, output_wav_path: Path) -> Path:
     """
     Normalizes input audio to 16 kHz mono 16-bit PCM WAV.
-    Applies FFmpeg Dynamic Audio Normalizer (dynaudnorm) to dynamically amplify
-    soft/muffled telephone respondent speech while keeping loud speaker clear.
+    Applies FFmpeg vocal bandpass filtering (80Hz highpass to eliminate AC/fan rumble,
+    8000Hz lowpass to eliminate high-frequency hiss) and Dynamic Audio Normalization (dynaudnorm)
+    to dynamically amplify soft/muffled telephone speech while keeping loud speaker clear.
     Includes automated container repair fallback for truncated or damaged headers.
     """
+    audio_filter = "highpass=f=80,lowpass=f=8000,dynaudnorm=p=0.9:m=10:s=12:g=15"
     args = [
         "-y",
         "-i", str(input_path),
-        "-af", "dynaudnorm=p=0.9:m=10:s=12:g=15",
+        "-af", audio_filter,
         "-ar", "16000",
         "-ac", "1",
         "-c:a", "pcm_s16le",
@@ -42,7 +44,7 @@ def normalize_to_wav(input_path: Path, output_wav_path: Path) -> Path:
                 repair_args = [
                     "-y",
                     "-i", str(repair_path),
-                    "-af", "dynaudnorm=p=0.9:m=10:s=12:g=15",
+                    "-af", audio_filter,
                     "-ar", "16000",
                     "-ac", "1",
                     "-c:a", "pcm_s16le",

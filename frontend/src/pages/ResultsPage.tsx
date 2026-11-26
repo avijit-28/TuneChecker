@@ -15,7 +15,8 @@ import {
   ArrowLeft, 
   FileText, 
   Clock, 
-  HardDrive 
+  HardDrive,
+  RotateCcw 
 } from 'lucide-react';
 
 export const ResultsPage: React.FC = () => {
@@ -162,6 +163,17 @@ export const ResultsPage: React.FC = () => {
     window.open(`/api/v1/calls/${id}/export?format=${format}`, '_blank');
   };
 
+  const handleReanalyze = async () => {
+    if (!id) return;
+    if (!window.confirm('Re-run full analysis with surgical audio enhancements?')) return;
+    try {
+      await apiRequest(`/calls/${id}/reanalyze`, { method: 'POST' });
+      navigate(`/calls/${id}/processing`);
+    } catch (err: any) {
+      alert(`Re-analysis failed: ${err.message}`);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
@@ -262,6 +274,28 @@ export const ResultsPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             type="button"
+            onClick={handleReanalyze}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              border: '1px solid var(--color-border)',
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text-primary)',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            title="Re-run transcription and analysis with deep audio enhancements"
+          >
+            <RotateCcw size={15} color="var(--color-primary)" />
+            Re-analyze
+          </button>
+
+          <button
+            type="button"
             onClick={() => handleExport('markdown')}
             style={{
               display: 'inline-flex',
@@ -324,6 +358,48 @@ export const ResultsPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Supervisory Ambiguity Banner */}
+      {analysis && (analysis.verdict === 'NEEDS_REVIEW' || analysis.confidence?.level === 'low' || analysis.limited_evidence_reason) && (
+        <div
+          style={{
+            marginBottom: '20px',
+            padding: '14px 18px',
+            borderRadius: '10px',
+            backgroundColor: 'rgba(234, 179, 8, 0.1)',
+            border: '1px solid rgba(234, 179, 8, 0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: 'var(--color-text-primary)' }}>
+            <span style={{ fontSize: '18px' }}>⚠️</span>
+            <div>
+              <strong>Supervisory Review Recommended:</strong> {analysis.limited_evidence_reason || 'Short call snippet or ambiguous speaker attribution detected.'}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsSwapModalOpen(true)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              border: '1px solid rgba(234, 179, 8, 0.6)',
+              backgroundColor: 'rgba(234, 179, 8, 0.25)',
+              color: 'var(--color-text-primary)',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Swap Speaker Roles
+          </button>
+        </div>
+      )}
 
       {/* Synchronized Audio Player */}
       <div style={{ marginBottom: '24px' }}>

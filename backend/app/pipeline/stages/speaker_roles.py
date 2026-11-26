@@ -85,6 +85,12 @@ def run_speaker_roles_stage(db: Session, call_id: str) -> dict:
     if not rep_speaker:
         rep_speaker = "A"
 
+    # Edge Case: Short / Mid-call audio snippet (< 4 utterances or < 25 total words)
+    total_words = sum(len(u.text.split()) for u in utterances)
+    if len(utterances) <= 3 or total_words < 25:
+        # Mark as ambiguous / uncertain to protect innocent sales rep from false RED penalties
+        llm_confidence = "low"
+
     customer_speaker = "B" if rep_speaker == "A" else "A"
 
     # Update database rows
@@ -94,13 +100,13 @@ def run_speaker_roles_stage(db: Session, call_id: str) -> dict:
             r.source = "auto"
             r.status = "confident" if llm_confidence in ["high", "medium"] else "uncertain"
             r.level = llm_confidence
-            r.factors = {"method": "hybrid_heuristic_llm", "cues": evidence_found[:2]}
+            r.factors = {"method": "hybrid_heuristic_llm", "cues": evidence_found[:2], "total_words": total_words}
         else:
             r.role = "customer"
             r.source = "auto"
             r.status = "confident" if llm_confidence in ["high", "medium"] else "uncertain"
             r.level = llm_confidence
-            r.factors = {"method": "complement"}
+            r.factors = {"method": "complement", "total_words": total_words}
     db.commit()
 
     return {

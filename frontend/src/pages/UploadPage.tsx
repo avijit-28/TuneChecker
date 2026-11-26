@@ -10,6 +10,7 @@ export const UploadPage: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [languageMode, setLanguageMode] = useState<'hinglish' | 'english' | 'hindi' | 'auto'>('hinglish');
+  const [forceReanalyze, setForceReanalyze] = useState(false);
   const [settingsInfo, setSettingsInfo] = useState<{ version: number; sensitivity: string; criteriaCount: number } | null>(null);
 
   const navigate = useNavigate();
@@ -35,6 +36,9 @@ export const UploadPage: React.FC = () => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('language_mode', languageMode);
+    if (forceReanalyze) {
+      formData.append('force_reanalyze', 'true');
+    }
 
     try {
       const response = await fetch('/api/v1/calls', {
@@ -161,12 +165,25 @@ export const UploadPage: React.FC = () => {
       <DropZone onFileSelect={setFile} disabled={isUploading} />
 
       {file && (
-        <FileCard
-          file={file}
-          onRemove={() => setFile(null)}
-          onUpload={handleUpload}
-          isUploading={isUploading}
-        />
+        <div style={{ marginBottom: '16px' }}>
+          <FileCard
+            file={file}
+            onRemove={() => setFile(null)}
+            onUpload={handleUpload}
+            isUploading={isUploading}
+          />
+          <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+              <input
+                type="checkbox"
+                checked={forceReanalyze}
+                onChange={(e) => setForceReanalyze(e.target.checked)}
+                style={{ cursor: 'pointer', accentColor: 'var(--color-primary)' }}
+              />
+              <span>Force fresh re-analysis (bypass instant audio fingerprint cache)</span>
+            </label>
+          </div>
+        </div>
       )}
 
       {uploadError && (

@@ -30,15 +30,18 @@ class FasterWhisperProvider(BaseSttProvider):
             if mode == "hinglish":
                 lang_param = "en"
                 initial_prompt_val = (
-                    "Yeh customer sales call Hindi aur Hinglish me hai. Roman script me verbatim Hinglish me transcribe karo: "
-                    "Haan, boliye, green packet khajoor do, pumpkin seeds, mix dry fruits, anjeer, do dena, teen dena."
+                    "Yeh customer sales and support call Hindi aur Hinglish me hai. Roman script me verbatim Hinglish me transcribe karo: "
+                    "Haan, boliye, product details, pricing, discount, refund policy, billing, subscription, agreement, follow up, order details."
                 )
             elif mode == "hindi":
                 lang_param = "hi"
-                initial_prompt_val = "यह ग्राहक बिक्री कॉल हिंदी और हिंग्लिश में है। कृपया देवनागरी में ट्रांसक्राइब करें।"
+                initial_prompt_val = "यह ग्राहक बिक्री और सहायता कॉल हिंदी और हिंग्लिश में है। उत्पाद, मूल्य निर्धारण, छूट, रिफंड और सेवा की बातचीत।"
             elif mode == "english":
                 lang_param = "en"
-                initial_prompt_val = "Customer sales call, product orders, quantities, pricing, delivery, English conversation."
+                initial_prompt_val = (
+                    "Customer sales and support call. Topics include product features, subscription, pricing, onboarding, "
+                    "discount, invoice, refund policy, deadlines, commitments, and professional customer service."
+                )
             else:
                 lang_param = settings.WHISPER_LANGUAGE
                 initial_prompt_val = settings.WHISPER_INITIAL_PROMPT

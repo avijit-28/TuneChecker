@@ -189,6 +189,18 @@ def retry_call(call_id: str, payload: dict, db: Session = Depends(get_db)):
         "status": "validating" if stage == "validation" else ("transcribing" if stage == "transcription" else "analyzing")
     }
 
+@router.post("/{call_id}/reanalyze", status_code=status.HTTP_202_ACCEPTED)
+def reanalyze_call(call_id: str, db: Session = Depends(get_db)):
+    c = CallService.get_call_detail(db, call_id)
+    if c["status_group"] == "in_progress":
+        raise AppError("NOT_RETRYABLE", "Cannot re-analyze while call is currently processing.", 409, details={"reason": "IN_PROGRESS"})
+    queue_call_processing(call_id, start_stage="validation")
+    return {
+        "call_id": call_id,
+        "status": "validating",
+        "message": "Full audio re-analysis queued with surgical enhancement."
+    }
+
 @router.get("/{call_id}/export")
 def export_call(call_id: str, format: str = Query("json", pattern="^(json|markdown)$"), db: Session = Depends(get_db)):
     detail = CallService.get_call_detail(db, call_id)
