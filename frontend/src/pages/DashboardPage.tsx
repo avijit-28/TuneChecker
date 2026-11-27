@@ -21,6 +21,8 @@ interface DashboardData {
     green: number;
     awaiting_analysis: number;
     needs_attention: number;
+    last_processing_sec?: number | null;
+    avg_processing_sec?: number | null;
   };
   tone_distribution: {
     red: number;
@@ -69,7 +71,7 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '28px' }}>
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
             Sales Call Quality Dashboard
@@ -214,10 +216,39 @@ export const DashboardPage: React.FC = () => {
             Recent follow-ups identified
           </div>
         </div>
+
+        <div
+          style={{
+            backgroundColor: 'var(--color-surface)',
+            padding: '20px',
+            borderRadius: '12px',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: '#5B5CE6',
+              textTransform: 'uppercase',
+            }}
+          >
+            <Clock size={16} /> Analysis Time
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 800, color: '#5B5CE6', marginTop: '8px' }}>
+            {kpis.last_processing_sec != null ? `${kpis.last_processing_sec}s` : '—'}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
+            {kpis.avg_processing_sec != null ? `Avg across audits: ${kpis.avg_processing_sec}s` : 'Waiting for completed audit'}
+          </div>
+        </div>
       </div>
 
       {/* Grid: Recent Calls & Recent Action Items */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <div className="dashboard-bottom-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         {/* Recent Calls */}
         <div
           style={{
@@ -283,7 +314,10 @@ export const DashboardPage: React.FC = () => {
                         {c.name}
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '2px' }}>
-                        {c.duration_ms ? `${(c.duration_ms / 1000).toFixed(0)}s` : '—'} • {new Date(c.created_at).toLocaleDateString()}
+                        {c.duration_ms ? `${(c.duration_ms / 1000).toFixed(0)}s audio` : '—'}
+                        {c.processing_time_sec != null ? ` • Analyzed in ${c.processing_time_sec}s` : ''}
+                        {' • '}
+                        {new Date(c.created_at).toLocaleDateString()}
                       </div>
                     </div>
 

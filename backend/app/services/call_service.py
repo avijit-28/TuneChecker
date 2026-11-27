@@ -767,6 +767,36 @@ class CallService:
 
         recent_call_rows, _ = CallService.list_calls(db, page=1, page_size=5)
 
+        # Compute actual analysis processing durations (seconds) from StageRun records
+        def _calc_processing_sec(call_obj: Call) -> Optional[float]:
+            stages = db.query(StageRun).filter(StageRun.call_id == call_obj.id).all()
+            if stages:
+                total_s = 0.0
+                for st in stages:
+                    if st.started_at and st.finished_at:
+                        total_s += max(0.0, (st.finished_at - st.started_at).total_seconds())
+                if total_s > 0.0:
+                    return round(total_s, 1)
+            if call_obj.status == "complete" and call_obj.created_at and call_obj.updated_at:
+                diff = max(0.0, (call_obj.updated_at - call_obj.created_at).total_seconds())
+                return round(diff, 1)
+            return None
+
+        completed_times = []
+        for c_obj in sorted(calls, key=lambda x: x.created_at or datetime.min, reverse=True):
+            if c_obj.status == "complete":
+                pt = _calc_processing_sec(c_obj)
+                if pt is not None and pt > 0:
+                    completed_times.append(pt)
+
+        last_processing_sec = completed_times[0] if completed_times else None
+        avg_processing_sec = round(sum(completed_times) / len(completed_times), 1) if completed_times else None
+
+        call_map = {c_obj.id: c_obj for c_obj in calls}
+        for rc in recent_call_rows:
+            c_obj = call_map.get(rc["id"])
+            rc["processing_time_sec"] = _calc_processing_sec(c_obj) if c_obj else None
+
         recent_actions_raw = (
             db.query(ActionItem, Call.original_filename, Utterance.start_ms)
             .join(Call, ActionItem.call_id == Call.id)
@@ -798,7 +828,9 @@ class CallService:
                 "green": green_count,
                 "needs_review": needs_review_count,
                 "awaiting_analysis": awaiting,
-                "needs_attention": failed
+                "needs_attention": failed,
+                "last_processing_sec": last_processing_sec,
+                "avg_processing_sec": avg_processing_sec,
             },
             "tone_distribution": {
                 "red": red_count,

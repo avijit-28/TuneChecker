@@ -34,8 +34,8 @@ export const AppShell: React.FC = () => {
           className="app-shell-main"
           style={{
             flex: 1,
-            padding: '32px',
-            maxWidth: '1280px',
+            padding: '20px 24px',
+            maxWidth: '1400px',
             width: '100%',
             margin: '0 auto',
             boxSizing: 'border-box'

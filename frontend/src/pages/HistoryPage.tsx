@@ -93,7 +93,7 @@ export const HistoryPage: React.FC = () => {
           marginBottom: '20px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           {(['all', 'red', 'green', 'needs_review', 'none'] as const).map((filter) => {
             const isSelected = toneFilter === filter;
             const labels: Record<string, string> = {
@@ -142,7 +142,8 @@ export const HistoryPage: React.FC = () => {
             padding: '6px 12px',
             borderRadius: '8px',
             border: '1px solid var(--color-border)',
-            width: '240px',
+            width: '100%',
+            maxWidth: '240px',
           }}
         >
           <Search size={14} color="var(--color-text-tertiary)" />
@@ -166,9 +167,9 @@ export const HistoryPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Desktop Table */}
       <div
-        className="responsive-table-container"
+        className="responsive-table-container history-desktop-table"
         style={{
           backgroundColor: 'var(--color-surface)',
           borderRadius: '12px',
@@ -351,6 +352,105 @@ export const HistoryPage: React.FC = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card List (<= 768px) */}
+      <div className="history-mobile-cards" style={{ display: 'none', flexDirection: 'column', gap: '10px' }}>
+        {calls.length === 0 ? (
+          <div
+            style={{
+              backgroundColor: 'var(--color-surface)',
+              borderRadius: '12px',
+              border: '1px solid var(--color-border)',
+              padding: '28px 16px',
+              textAlign: 'center',
+              color: 'var(--color-text-tertiary)',
+              fontSize: '13px',
+            }}
+          >
+            {loading ? 'Loading calls...' : 'No calls match the current search and filters.'}
+          </div>
+        ) : (
+          calls.map((c) => {
+            const durationSec = c.duration_ms ? `${(c.duration_ms / 1000).toFixed(0)}s` : '—';
+            const uploadDate = new Date(c.created_at).toLocaleDateString(undefined, {
+              month: 'short',
+              day: 'numeric',
+            });
+            const isRed = c.tone === 'RED';
+            const isGreen = c.tone === 'GREEN';
+            const targetLink =
+              c.status_group === 'in_progress' ? `/calls/${c.id}/processing` : `/calls/${c.id}`;
+
+            return (
+              <Link
+                key={c.id}
+                to={targetLink}
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--color-border)',
+                  padding: '14px',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                  <span
+                    style={{
+                      fontSize: '13.5px',
+                      fontWeight: 700,
+                      color: 'var(--color-text-primary)',
+                      wordBreak: 'break-word',
+                      lineHeight: 1.35,
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    {c.name}
+                  </span>
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                      fontSize: '10.5px',
+                      fontWeight: 700,
+                      backgroundColor: isRed
+                        ? 'var(--tone-red-bg)'
+                        : isGreen
+                        ? 'var(--tone-green-bg)'
+                        : 'var(--color-surface-sunken)',
+                      color: isRed
+                        ? 'var(--tone-red-fg)'
+                        : isGreen
+                        ? 'var(--tone-green-fg)'
+                        : 'var(--color-text-tertiary)',
+                      border: `1px solid ${
+                        isRed
+                          ? 'var(--tone-red-border)'
+                          : isGreen
+                          ? 'var(--tone-green-border)'
+                          : 'var(--color-border)'
+                      }`,
+                    }}
+                  >
+                    {isRed ? 'RED' : isGreen ? 'GREEN' : c.tone === 'NEEDS_REVIEW' ? 'REVIEW' : 'PENDING'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--color-text-tertiary)' }}>
+                  <span>{durationSec} • {uploadDate}</span>
+                  <span style={{ textTransform: 'capitalize', fontWeight: 600, color: c.status === 'complete' ? 'var(--success-fg)' : 'var(--color-primary)' }}>
+                    {c.status}
+                  </span>
+                </div>
+              </Link>
+            );
+          })
+        )}
       </div>
     </div>
   );

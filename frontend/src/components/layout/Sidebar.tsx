@@ -1,11 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  UploadCloud, 
-  History, 
+import {
+  LayoutDashboard,
+  UploadCloud,
+  History,
   Settings as SettingsIcon,
-  PhoneCall
+  AudioWaveform,
+  Headphones,
+  X,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,54 +25,83 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose }) => {
   ];
 
   return (
-    <aside 
+    <aside
       className={`sidebar-desktop ${mobileOpen ? 'mobile-open' : ''}`}
       style={{
-        width: '240px',
-        backgroundColor: 'var(--color-surface)',
-        borderRight: '1px solid var(--color-border)',
+        width: '248px',
+        background: 'linear-gradient(180deg, #14112B 0%, #1C183D 100%)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.08)',
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
         position: 'sticky',
-        top: 0
+        top: 0,
+        overflowY: 'auto',
+        flexShrink: 0,
       }}
       aria-label="Main Navigation"
     >
-      <div 
+      {/* Brand Header */}
+      <div
         style={{
-          padding: '20px 24px',
-          borderBottom: '1px solid var(--color-divider)',
+          padding: '20px 20px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
           display: 'flex',
           alignItems: 'center',
-          gap: '12px'
+          justifyContent: 'space-between',
+          gap: '12px',
         }}
       >
-        <div 
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+              color: '#ffffff',
+              borderRadius: '10px',
+              width: '38px',
+              height: '38px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 14px rgba(99, 102, 241, 0.45)',
+              flexShrink: 0,
+            }}
+          >
+            <AudioWaveform size={20} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '16px', color: '#ffffff', lineHeight: 1.2 }}>
+              TuneChecker
+            </div>
+            <div style={{ fontSize: '10px', color: '#9F9AC8', letterSpacing: '0.06em', marginTop: '2px' }}>
+              SALES CALL AUDITOR
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onClose?.()}
+          className="mobile-nav-close"
+          aria-label="Close navigation menu"
           style={{
-            backgroundColor: 'var(--color-primary)',
-            color: 'var(--color-on-primary)',
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: 'none',
             borderRadius: '8px',
-            width: '36px',
-            height: '36px',
-            display: 'flex',
+            padding: '6px',
+            color: '#E2E0F5',
+            cursor: 'pointer',
+            display: 'none',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
           }}
         >
-          <PhoneCall size={20} />
-        </div>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--color-text-primary)', lineHeight: 1.2 }}>
-            TuneChecker
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', letterSpacing: '0.04em' }}>
-            SALES CALL AUDITOR
-          </div>
-        </div>
+          <X size={18} />
+        </button>
       </div>
 
-      <nav style={{ padding: '16px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      {/* Navigation Links */}
+      <nav style={{ padding: '18px 14px', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -83,14 +114,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose }) => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                padding: '10px 14px',
-                borderRadius: '8px',
+                padding: '11px 14px',
+                borderRadius: '10px',
                 fontSize: '14px',
                 fontWeight: isActive ? 600 : 500,
-                color: isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                backgroundColor: isActive ? 'var(--color-primary-subtle)' : 'transparent',
+                color: isActive ? '#ffffff' : '#B2AED4',
+                background: isActive
+                  ? 'linear-gradient(90deg, #5B5CE6 0%, #8B5CF6 100%)'
+                  : 'transparent',
+                boxShadow: isActive ? '0 6px 18px rgba(99, 102, 241, 0.35)' : 'none',
                 textDecoration: 'none',
-                transition: 'all 0.15s ease'
+                transition: 'all 0.18s ease',
               })}
             >
               <Icon size={18} />
@@ -100,16 +134,40 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose }) => {
         })}
       </nav>
 
-      <div 
-        style={{ 
-          padding: '16px 20px', 
-          borderTop: '1px solid var(--color-divider)',
-          fontSize: '12px',
-          color: 'var(--color-text-tertiary)'
-        }}
-      >
-        <div>Sales Call Auditor</div>
-        <div style={{ fontSize: '11px', color: 'var(--color-text-disabled)' }}>2-Layer Tone & Voice Analytics</div>
+      {/* Bottom AI Call Audit Promo Card */}
+      <div style={{ padding: '16px 14px' }}>
+        <div
+          style={{
+            borderRadius: '14px',
+            padding: '16px 14px',
+            background: 'linear-gradient(145deg, rgba(99, 102, 241, 0.25) 0%, rgba(139, 92, 246, 0.16) 100%)',
+            border: '1px solid rgba(167, 139, 250, 0.28)',
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: '40px',
+              height: '40px',
+              margin: '0 auto 10px auto',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #6366F1 0%, #A855F7 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              boxShadow: '0 4px 16px rgba(139, 92, 246, 0.45)',
+            }}
+          >
+            <Headphones size={20} />
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>
+            AI Call Audit
+          </div>
+          <div style={{ fontSize: '11px', color: '#C4C0E8', marginTop: '4px', lineHeight: 1.4 }}>
+            Transcribe • Analyze • Audit with Voice AI
+          </div>
+        </div>
       </div>
     </aside>
   );

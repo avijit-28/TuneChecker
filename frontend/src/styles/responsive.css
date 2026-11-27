@@ -1,7 +1,20 @@
 /* Mobile & Tablet Responsive Styles */
 
+html,
+body {
+  overflow-x: clip;
+}
+
+@media (max-width: 768px) {
+  .processing-grid {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+}
+
 @media (max-width: 900px) {
-  .results-grid {
+  .results-grid,
+  .dashboard-bottom-grid {
     grid-template-columns: 1fr !important;
     gap: 16px !important;
   }
@@ -25,26 +38,37 @@
 
   .topbar-container {
     padding: 0 12px !important;
+    gap: 8px !important;
   }
 
-  .system-engine-label {
+  .topbar-search-form {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .dashboard-kpi-grid,
+  .settings-sensitivity-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .history-desktop-table {
     display: none !important;
   }
 
-  .dashboard-kpi-grid {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
+  .history-mobile-cards {
+    display: flex !important;
   }
 
   /* Mobile sidebar drawer */
   .sidebar-desktop {
     position: fixed !important;
-    left: -260px !important;
+    left: -268px !important;
     top: 0 !important;
     bottom: 0 !important;
     z-index: 50 !important;
     transition: left 0.25s ease-in-out !important;
-    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 4px 0 24px rgba(15, 12, 41, 0.45) !important;
   }
 
   .sidebar-desktop.mobile-open {
@@ -55,7 +79,8 @@
     display: block !important;
     position: fixed;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgba(15, 12, 41, 0.55);
+    backdrop-filter: blur(2px);
     z-index: 45;
   }
 
@@ -63,11 +88,19 @@
     display: inline-flex !important;
   }
 
-  /* Results header & buttons */
+  .mobile-nav-close {
+    display: inline-flex !important;
+  }
+
+  .stepper-rail-col {
+    width: 18px !important;
+  }
+
+  /* Results & processing header actions */
   .results-header-actions {
     flex-wrap: wrap !important;
     width: 100% !important;
-    margin-top: 10px !important;
+    margin-top: 6px !important;
   }
 
   .results-header-actions button {
@@ -82,12 +115,22 @@
   }
 }
 
+@media (max-width: 520px) {
+  .topbar-user-meta {
+    display: none !important;
+  }
+}
+
 @media (min-width: 769px) {
   .sidebar-backdrop {
     display: none !important;
   }
 
   .mobile-nav-toggle {
+    display: none !important;
+  }
+
+  .mobile-nav-close {
     display: none !important;
   }
 }

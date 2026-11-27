@@ -25,12 +25,13 @@ export const FileCard: React.FC<FileCardProps> = ({
         borderRadius: '12px',
         border: '1px solid var(--color-border)',
         display: 'flex',
+        flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '16px',
+        gap: '14px',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: '1 1 200px' }}>
         <div
           style={{
             width: '40px',
