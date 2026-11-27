@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Stepper } from '../components/processing/Stepper';
 import type { StageInfo } from '../components/processing/Stepper';
 import { apiRequest } from '../api/client';
-import { AlertOctagon, ArrowLeft, FileAudio, Clock, HardDrive, Activity } from 'lucide-react';
+import { AlertOctagon, ArrowLeft, ArrowRight, FileAudio, Clock, HardDrive, Activity, CheckCircle2, Sparkles } from 'lucide-react';
 
 interface CallStatusData {
   call_id: string;
@@ -90,38 +90,86 @@ export const ProcessingPage: React.FC = () => {
     }
   };
 
+  const progressPct = statusData && statusData.total_stages > 0
+    ? Math.round((statusData.completed_stages / statusData.total_stages) * 100)
+    : 0;
+  const isComplete = statusData?.status === 'complete' || statusData?.status === 'partial';
+
   return (
-    <div>
-      <div style={{ marginBottom: '28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ maxWidth: '840px', margin: '0 auto' }}>
+      <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
-            Auditing Sales Call
-          </h1>
-          <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-            Processing ID: <code style={{ backgroundColor: 'var(--color-surface-sunken)', padding: '2px 6px', borderRadius: '4px' }}>{id}</code>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+            <h1 style={{ fontSize: '26px', fontWeight: 800, margin: 0, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>
+              Auditing Sales Call
+            </h1>
+            {statusData && (
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  padding: '3px 10px',
+                  borderRadius: '999px',
+                  backgroundColor: isComplete ? 'var(--success-bg)' : statusData.status === 'failed' ? 'var(--error-bg)' : 'rgba(59, 130, 246, 0.12)',
+                  color: isComplete ? 'var(--success-fg)' : statusData.status === 'failed' ? 'var(--error-fg)' : 'var(--color-primary)',
+                  border: `1px solid ${isComplete ? 'var(--success-border)' : statusData.status === 'failed' ? 'var(--error-border)' : 'rgba(59, 130, 246, 0.3)'}`,
+                }}
+              >
+                {statusData.status}
+              </span>
+            )}
+          </div>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-tertiary)' }}>
+            Call ID: <code style={{ backgroundColor: 'var(--color-surface-sunken)', padding: '2px 6px', borderRadius: '4px' }}>{id}</code>
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => navigate('/history')}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'none',
-            border: '1px solid var(--color-border)',
-            padding: '8px 14px',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: 600,
-            color: 'var(--color-text-secondary)',
-            cursor: 'pointer',
-          }}
-        >
-          <ArrowLeft size={16} />
-          View in History
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={() => navigate('/history')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: 'var(--color-text-secondary)',
+              cursor: 'pointer',
+            }}
+          >
+            <ArrowLeft size={15} />
+            History
+          </button>
+          {isComplete && (
+            <button
+              type="button"
+              onClick={() => navigate(`/calls/${id}`)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'var(--color-primary)',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: '#fff',
+                cursor: 'pointer',
+              }}
+            >
+              View Report
+              <ArrowRight size={15} />
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -129,7 +177,7 @@ export const ProcessingPage: React.FC = () => {
           style={{
             marginBottom: '20px',
             padding: '14px',
-            borderRadius: '8px',
+            borderRadius: '10px',
             backgroundColor: 'var(--error-bg)',
             color: 'var(--error-fg)',
             border: '1px solid var(--error-border)',
@@ -145,53 +193,88 @@ export const ProcessingPage: React.FC = () => {
       )}
 
       {statusData && (
-        <div style={{ maxWidth: '680px', margin: '0 auto 24px auto' }}>
-          {/* File Metadata Overview Card */}
+        <div style={{ marginBottom: '24px' }}>
+          {/* Hero File & Progress Card */}
           <div
             style={{
-              padding: '16px 20px',
-              borderRadius: '12px',
+              padding: '20px 24px',
+              borderRadius: '14px',
               backgroundColor: 'var(--color-surface)',
               border: '1px solid var(--color-border)',
-              marginBottom: '16px',
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '12px',
+              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.03)',
+              marginBottom: '14px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <FileAudio size={22} color="var(--color-primary)" />
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-                  {statusData.filename || 'Audio Recording'}
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <FileAudio size={22} color="var(--color-primary)" />
                 </div>
-                <div style={{ display: 'flex', gap: '14px', fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '2px' }}>
-                  {statusData.duration_ms && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Clock size={12} /> {(statusData.duration_ms / 1000).toFixed(1)}s duration
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                    {statusData.filename || 'Audio Recording'}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
+                    {statusData.duration_ms != null && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Clock size={12} /> {(statusData.duration_ms / 1000).toFixed(1)}s
+                      </span>
+                    )}
+                    {statusData.size_bytes != null && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <HardDrive size={12} /> {(statusData.size_bytes / (1024 * 1024)).toFixed(2)} MB
+                      </span>
+                    )}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-primary)', fontWeight: 600 }}>
+                      <Sparkles size={12} /> 2-Layer Text + Voice Acoustics
                     </span>
-                  )}
-                  {statusData.size_bytes && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <HardDrive size={12} /> {(statusData.size_bytes / (1024 * 1024)).toFixed(2)} MB
-                    </span>
-                  )}
-                  <span>Status: <strong style={{ color: 'var(--color-primary)' }}>{statusData.status}</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '22px', fontWeight: 800, color: isComplete ? 'var(--success-fg)' : 'var(--color-primary)', lineHeight: 1 }}>
+                  {progressPct}%
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
+                  {statusData.completed_stages} of {statusData.total_stages} stages
                 </div>
               </div>
             </div>
+
+            {/* Linear Progress Bar */}
+            <div style={{ height: '8px', borderRadius: '999px', backgroundColor: 'var(--color-surface-sunken)', overflow: 'hidden' }}>
+              <div
+                style={{
+                  width: `${progressPct}%`,
+                  height: '100%',
+                  borderRadius: '999px',
+                  backgroundColor: isComplete ? 'var(--success-fg)' : statusData.status === 'failed' ? 'var(--error-fg)' : 'var(--color-primary)',
+                  transition: 'width 0.4s ease',
+                }}
+              />
+            </div>
           </div>
 
-          {/* Live Current Activity Banner */}
+          {/* Live Current Activity or Completion Banner */}
           {statusData.status_group === 'in_progress' && statusData.current_activity && (
             <div
               style={{
-                padding: '14px 18px',
+                padding: '13px 18px',
                 borderRadius: '10px',
                 backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
+                border: '1px solid rgba(59, 130, 246, 0.25)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
@@ -199,7 +282,27 @@ export const ProcessingPage: React.FC = () => {
             >
               <Activity size={18} color="var(--color-primary)" className="animate-pulse" />
               <div style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>
-                <strong>Current Stage Activity:</strong> {statusData.current_activity}
+                <strong>Live Activity:</strong> {statusData.current_activity}
+              </div>
+            </div>
+          )}
+
+          {isComplete && (
+            <div
+              style={{
+                padding: '13px 18px',
+                borderRadius: '10px',
+                backgroundColor: 'var(--success-bg)',
+                border: '1px solid var(--success-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: 'var(--success-fg)', fontWeight: 600 }}>
+                <CheckCircle2 size={18} />
+                <span>Audit complete! Redirecting to full transcript & tone evidence report...</span>
               </div>
             </div>
           )}

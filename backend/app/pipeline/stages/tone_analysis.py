@@ -1,19 +1,28 @@
 import uuid
+from pathlib import Path
 from sqlalchemy.orm import Session
+from app.config import settings
+from app.db.models.calls import Call
 from app.db.models.speaker_roles import SpeakerRole
 from app.db.models.utterances import Utterance
 from app.db.models.analyses import Analysis, EvidenceItem
 from app.services.settings_service import SettingsService
 from app.pipeline.providers.llm.ollama import OllamaLlmProvider
 from app.pipeline.safeguards.tone_decision import evaluate_tone_verdict
+from app.pipeline.safeguards.voice_acoustics import analyze_utterance_acoustics
 
-TONE_ANALYSIS_SYSTEM = """You are a sales call quality tone evaluator. Your job is to detect whether a sales representative was rude, hostile, dismissive, or unprofessional to a customer.
+TONE_ANALYSIS_SYSTEM = """You are a 2-layer (Text + Voice Acoustics) sales call quality tone evaluator. Your job is to detect whether a sales representative was rude, hostile, dismissive, or unprofessional to a customer.
 
 CRITICAL INSTRUCTIONS:
-1. Normal business courtesy, helpful explanations, polite answers, and scheduling follow-ups are NOT violations.
-2. If the sales rep is polite, helpful, and professional, you MUST return:
+1. You will receive Sales Rep utterances annotated with real [Voice Acoustics: ...] prosody tags (loudness vs baseline, pitch, vocal sharpness) AND read-only [Customer - CONTEXT ONLY] lines.
+2. NEVER flag or cite [Customer - CONTEXT ONLY] utterances. Only evaluate and cite Sales Rep utterances.
+3. Use BOTH the words AND the Voice Acoustics + Customer context to judge intent:
+   - Playful banter or light teasing spoken in a [calm/normal voice] with friendly customer context is NOT hostile or rude.
+   - Insulting, mocking, or aggressive remarks spoken in a [loud/agitated voice] or [tense/sharp voice] (or blatantly abusive language regardless of tone) MUST be flagged.
+4. Normal business courtesy, helpful explanations, polite answers, and scheduling follow-ups are NOT violations.
+5. If the sales rep is polite, helpful, and professional, you MUST return:
    {"has_negative_tone": false, "candidate_findings": []}
-3. Flag violations matching these criteria:
+6. Flag violations matching these criteria:
    - "rude": blatantly disrespectful, mocking, or offensive remarks
    - "hostile": shouting, verbal attacks, aggressive confrontations, or threats
    - "dismissive": outright refusing to answer or brushing off customer concerns ("not my problem", "whatever")
@@ -92,11 +101,27 @@ def run_tone_stage(db: Session, call_id: str) -> dict:
 
     rep_total_sec = sum((u.end_ms - u.start_ms) / 1000.0 for u in rep_utterances)
 
-    rep_utt_dicts = [{"id": u.id, "speaker_label": u.speaker_label, "text": u.text} for u in rep_utterances]
+    rep_utt_dicts = [
+        {"id": u.id, "speaker_label": u.speaker_label, "text": u.text, "start_ms": u.start_ms, "end_ms": u.end_ms}
+        for u in rep_utterances
+    ]
 
-    # Format prompt with rep utterances only
-    formatted_rep_speech = "\n".join([f"Utterance [{u['id']}]: \"{u['text']}\"" for u in rep_utt_dicts])
-    user_prompt = f"Evaluate the sales representative's utterances:\n\n{formatted_rep_speech}"
+    # Layer 2: Compute per-utterance voice acoustics (RMS dB, pitch F0, sharpness)
+    call_row = db.query(Call).filter(Call.id == call_id).first()
+    audio_path = (Path(settings.STORAGE_LOCAL_PATH) / call_row.storage_key) if (call_row and call_row.storage_key) else None
+    acoustics_map = analyze_utterance_acoustics(audio_path, rep_utt_dicts) if audio_path else {}
+
+    # Format prompt with Sales Rep utterances + Voice Acoustics + read-only Customer context
+    prompt_lines = []
+    for u in all_utterances:
+        if u.speaker_label == rep_role.speaker_label:
+            ac = acoustics_map.get(str(u.id))
+            ac_tag = f" [Voice Acoustics: {ac['tag']}]" if ac else ""
+            prompt_lines.append(f"Sales Rep Utterance [{u.id}]{ac_tag}: \"{u.text}\"")
+        else:
+            prompt_lines.append(f"[Customer - CONTEXT ONLY, NEVER flag]: \"{u.text}\"")
+    formatted_conversation = "\n".join(prompt_lines)
+    user_prompt = f"Evaluate ONLY the Sales Rep utterances using both text and Voice Acoustics:\n\n{formatted_conversation}"
 
     candidate_findings = []
     try:
@@ -106,8 +131,20 @@ def run_tone_stage(db: Session, call_id: str) -> dict:
             candidate_findings = []
         else:
             candidate_findings = res.get("candidate_findings", [])
-    except Exception as e:
+    except Exception:
         candidate_findings = []
+
+    # Enrich findings with measured voice acoustics & boost severity for extreme shouting
+    for f in candidate_findings:
+        if not isinstance(f, dict):
+            continue
+        uid = str(f.get("utterance_id", ""))
+        ac = acoustics_map.get(uid)
+        if ac:
+            if ac.get("emotion_hint") == "loud_or_agitated" and ac.get("delta_db", 0.0) >= 7.0:
+                f["severity"] = min(3, int(f.get("severity", 2)) + 1)
+            rationale = str(f.get("rationale", "")).strip()
+            f["rationale"] = f"{rationale} [Voice: {ac['tag']}]".strip()
 
     # Safeguard decision
     decision = evaluate_tone_verdict(

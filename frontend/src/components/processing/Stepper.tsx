@@ -37,10 +37,10 @@ const STAGE_TITLES: Record<string, string> = {
 };
 
 const STAGE_DESCRIPTIONS: Record<string, string> = {
-  validation: 'Validating container format, duration limits, and applying EBU R128 loudness bandpass filter.',
-  transcription: 'Decoding speech to text using Faster-Whisper ASR with sales domain context hints.',
+  validation: 'Validating container format, duration limits, and normalizing to lossless 16kHz mono PCM.',
+  transcription: 'Decoding speech to text using Faster-Whisper ASR with native Hinglish/Hindi support.',
   speaker_identification: 'Diarizing speech turns and classifying Sales Representative vs Customer roles.',
-  tone_analysis: 'Auditing representative statements for rude, hostile, or dismissive violations.',
+  tone_analysis: '2-layer evaluation: Voice Acoustics (volume spike, pitch F0, sharpness) + Text intent.',
   evidence_extraction: 'Matching exact transcript quote spans and verifying severity thresholds.',
   action_items: 'Detecting commitments, follow-ups, modality, and calendar deadlines.',
   completion: 'Compiling final audit report, speech recovery metrics, and coaching guidance.',
@@ -54,17 +54,17 @@ export const Stepper: React.FC<StepperProps> = ({
   isRetrying,
 }) => {
   return (
-    <div style={{ maxWidth: '680px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-          Pipeline Progress: {completedCount} of {totalStages} stages completed
+    <div style={{ maxWidth: '840px', margin: '0 auto' }}>
+      <div style={{ marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-text-secondary)' }}>
+          Pipeline Stages ({completedCount}/{totalStages})
         </span>
-        <span style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>
+        <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
           Zero-Cost Local Pipeline
         </span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {stages.map((st) => {
           const title = STAGE_TITLES[st.stage] || st.stage;
           const isSuccess = st.status === 'succeeded';

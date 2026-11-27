@@ -76,7 +76,7 @@ async def upload_call(
 
     raw_hash = hasher.hexdigest()
     lang_mode = getattr(settings, "WHISPER_LANGUAGE_MODE", "hinglish")
-    cache_version = "v5-hi-hinglish"
+    cache_version = "v6-2layer-acoustics"
     audio_hash = hashlib.sha256(f"{raw_hash}:{cache_version}:{lang_mode}".encode("utf-8")).hexdigest()
     call = CallService.create_call(db, sanitized_name, total_bytes, storage_key, audio_hash=audio_hash)
 

@@ -208,6 +208,43 @@ class CallService:
                 )
                 db.add(new_cr)
 
+        # Clone StageRuns so ProcessingPage shows 7/7 completed stages accurately
+        now = datetime.utcnow()
+        source_stages = (
+            db.query(StageRun)
+            .filter(StageRun.call_id == source_call_id)
+            .order_by(StageRun.started_at.asc())
+            .all()
+        )
+        if source_stages:
+            for st in source_stages:
+                db.add(StageRun(
+                    id=str(uuid.uuid4()),
+                    call_id=target_call.id,
+                    stage=st.stage,
+                    attempt=1,
+                    status=st.status,
+                    started_at=now,
+                    finished_at=now,
+                    result_summary=f"{st.result_summary or 'Completed'} (cached)",
+                    error_code=st.error_code,
+                ))
+        else:
+            for st_name in [
+                "validation", "transcription", "speaker_identification",
+                "tone_analysis", "evidence_extraction", "action_items", "completion"
+            ]:
+                db.add(StageRun(
+                    id=str(uuid.uuid4()),
+                    call_id=target_call.id,
+                    stage=st_name,
+                    attempt=1,
+                    status="succeeded",
+                    started_at=now,
+                    finished_at=now,
+                    result_summary="Restored from instant fingerprint cache.",
+                ))
+
         target_call.status = "complete"
         db.commit()
         return True
