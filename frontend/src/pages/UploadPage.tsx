@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DropZone } from '../components/upload/DropZone';
 import { FileCard } from '../components/upload/FileCard';
 import { apiRequest } from '../api/client';
-import { Sliders, ShieldCheck } from 'lucide-react';
+import { Sliders, ShieldCheck, Trash2 } from 'lucide-react';
 
 export const UploadPage: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -11,6 +11,8 @@ export const UploadPage: React.FC = () => {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [languageMode, setLanguageMode] = useState<'hinglish' | 'english' | 'hindi' | 'auto'>('hinglish');
   const [forceReanalyze, setForceReanalyze] = useState(false);
+  const [isClearingCache, setIsClearingCache] = useState(false);
+  const [cacheMessage, setCacheMessage] = useState<string | null>(null);
   const [settingsInfo, setSettingsInfo] = useState<{ version: number; sensitivity: string; criteriaCount: number } | null>(null);
 
   const navigate = useNavigate();
@@ -64,6 +66,25 @@ export const UploadPage: React.FC = () => {
     } catch (err: any) {
       setUploadError(err.message || 'An error occurred during upload.');
       setIsUploading(false);
+    }
+  };
+
+  const handleClearCache = async () => {
+    setIsClearingCache(true);
+    setCacheMessage(null);
+    try {
+      const res = await apiRequest<{ cleared_entries: number }>('/calls/cache/clear', {
+        method: 'POST',
+      });
+      setCacheMessage(
+        res.cleared_entries > 0
+          ? `Cleared ${res.cleared_entries} cached fingerprint(s). Next upload will run fresh.`
+          : 'Fingerprint cache is already empty.'
+      );
+    } catch (err: any) {
+      setCacheMessage(err?.message || 'Failed to clear cache.');
+    } finally {
+      setIsClearingCache(false);
     }
   };
 
@@ -163,6 +184,48 @@ export const UploadPage: React.FC = () => {
       </div>
 
       <DropZone onFileSelect={setFile} disabled={isUploading} />
+
+      <div
+        style={{
+          marginTop: '12px',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+          {cacheMessage ? (
+            <span style={{ color: 'var(--color-primary)', fontWeight: 500 }}>{cacheMessage}</span>
+          ) : (
+            <span>Duplicate audio uploads reuse cached audit results unless cleared or forced.</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={handleClearCache}
+          disabled={isClearingCache || isUploading}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 12px',
+            borderRadius: '8px',
+            border: '1px solid var(--color-border)',
+            backgroundColor: 'var(--color-surface)',
+            color: 'var(--color-text-primary)',
+            fontSize: '12px',
+            fontWeight: 600,
+            cursor: isClearingCache || isUploading ? 'not-allowed' : 'pointer',
+            opacity: isClearingCache || isUploading ? 0.6 : 1,
+          }}
+        >
+          <Trash2 size={14} />
+          {isClearingCache ? 'Clearing...' : 'Clear Cache'}
+        </button>
+      </div>
 
       {file && (
         <div style={{ marginBottom: '16px' }}>

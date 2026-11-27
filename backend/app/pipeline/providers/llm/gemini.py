@@ -11,7 +11,7 @@ logger = logging.getLogger("tune_checker.llm.gemini")
 class GeminiLlmProvider(BaseLlmProvider):
     """Google Gemini LLM provider for zero-failure fallback and cloud reasoning."""
 
-    def __init__(self, api_key: str = None, model: str = "gemini-2.5-flash"):
+    def __init__(self, api_key: str = None, model: str = "gemini-3.8-flash"):
         self.api_key = api_key or settings.GEMINI_API_KEY
         if not self.api_key:
             raise AppError("CONFIG_ERROR", "GEMINI_API_KEY is not configured.", 500)

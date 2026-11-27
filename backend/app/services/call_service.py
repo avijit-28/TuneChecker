@@ -52,6 +52,14 @@ class CallService:
         )
 
     @staticmethod
+    def clear_fingerprint_cache(db: Session) -> int:
+        cleared = db.query(Call).filter(Call.audio_hash.isnot(None)).update(
+            {Call.audio_hash: None}, synchronize_session=False
+        )
+        db.commit()
+        return int(cleared or 0)
+
+    @staticmethod
     def clone_completed_analysis(db: Session, source_call_id: str, target_call: Call) -> bool:
         source_call = db.query(Call).filter(Call.id == source_call_id).first()
         if not source_call or source_call.status != "complete":

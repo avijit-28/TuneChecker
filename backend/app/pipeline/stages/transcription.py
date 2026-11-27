@@ -71,7 +71,7 @@ def surgically_infill_segments(aligned_segments: list, wav_path: Path) -> list:
                 if proc.returncode == 0 and slice_path.exists() and slice_path.stat().st_size > 1000:
                     slice_bytes = slice_path.read_bytes()
                     resp = client.models.generate_content(
-                        model="gemini-2.5-flash",
+                        model="gemini-3.8-flash",
                         contents=[
                             types.Part.from_bytes(data=slice_bytes, mime_type="audio/wav"),
                             "Transcribe this short audio snippet verbatim in plain text. Only return the spoken words, nothing else.",

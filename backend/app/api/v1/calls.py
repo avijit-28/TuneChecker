@@ -74,7 +74,10 @@ async def upload_call(
             os.remove(dest_path)
         raise AppError("INVALID_FILE_TYPE", f"File header does not match expected audio container format for '{ext}'.", 415)
 
-    audio_hash = hasher.hexdigest()
+    raw_hash = hasher.hexdigest()
+    lang_mode = getattr(settings, "WHISPER_LANGUAGE_MODE", "hinglish")
+    cache_version = "v4-pcm"
+    audio_hash = hashlib.sha256(f"{raw_hash}:{cache_version}:{lang_mode}".encode("utf-8")).hexdigest()
     call = CallService.create_call(db, sanitized_name, total_bytes, storage_key, audio_hash=audio_hash)
 
     # Fast Fingerprint Deduplication Cache
@@ -95,6 +98,12 @@ async def upload_call(
         "created_at": call.created_at,
         "cached": bool(existing_completed)
     }
+
+@router.post("/cache/clear")
+def clear_audio_cache(db: Session = Depends(get_db)):
+    """Invalidates all audio fingerprint cache entries without deleting call history."""
+    cleared = CallService.clear_fingerprint_cache(db)
+    return {"cleared_entries": cleared}
 
 @router.get("", response_model=CallListResponse)
 def list_calls(
