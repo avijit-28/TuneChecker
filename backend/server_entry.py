@@ -10,6 +10,16 @@ os.environ.setdefault("WHISPER_COMPUTE_TYPE", "int8")
 os.environ.setdefault("WHISPER_BEAM_SIZE", "1")
 os.environ.setdefault("CORS_ORIGINS", "*")
 
+# Required by Hugging Face ZeroGPU runtime during startup
+try:
+    import spaces
+
+    @spaces.GPU
+    def _zerogpu_ready():
+        return "ready"
+except Exception:
+    pass
+
 import create_tables  # noqa: E402, F401
 from app.main import app  # noqa: E402
 
