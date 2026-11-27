@@ -69,12 +69,14 @@ class FasterWhisperProvider(BaseSttProvider):
     _model_instance: Optional[WhisperModel] = None
 
     @classmethod
-    def get_model(cls) -> WhisperModel:
+    def get_model(cls, device: Optional[str] = None, compute_type: Optional[str] = None) -> WhisperModel:
+        target_device = device or settings.WHISPER_DEVICE
+        target_compute = compute_type or settings.WHISPER_COMPUTE_TYPE
         if cls._model_instance is None:
             cls._model_instance = WhisperModel(
                 settings.WHISPER_MODEL,
-                device=settings.WHISPER_DEVICE,
-                compute_type=settings.WHISPER_COMPUTE_TYPE
+                device=target_device,
+                compute_type=target_compute,
             )
         return cls._model_instance
 
@@ -111,7 +113,29 @@ class FasterWhisperProvider(BaseSttProvider):
 
     def transcribe(self, audio_path: Path) -> SttResult:
         try:
-            model = self.get_model()
+            import spaces  # type: ignore
+
+            @spaces.GPU(duration=60)
+            def _gpu_run(path_str: str) -> SttResult:
+                return self._transcribe_core(Path(path_str), use_gpu=True)
+
+            return _gpu_run(str(audio_path))
+        except ImportError:
+            return self._transcribe_core(audio_path, use_gpu=False)
+        except AppError:
+            raise
+        except Exception as e:
+            logger.warning(f"GPU transcription fallback to CPU due to: {e}")
+            return self._transcribe_core(audio_path, use_gpu=False)
+
+    def _transcribe_core(self, audio_path: Path, use_gpu: bool = False) -> SttResult:
+        try:
+            if use_gpu:
+                model = self.get_model(device="cuda", compute_type="float16")
+                beam_size = 5
+            else:
+                model = self.get_model()
+                beam_size = settings.WHISPER_BEAM_SIZE
 
             # Select language and prompt based on WHISPER_LANGUAGE_MODE
             mode = getattr(settings, "WHISPER_LANGUAGE_MODE", "hinglish").lower()
@@ -146,7 +170,7 @@ class FasterWhisperProvider(BaseSttProvider):
 
             def _run_whisper(language: Optional[str], use_vad: bool):
                 kwargs = dict(
-                    beam_size=settings.WHISPER_BEAM_SIZE,
+                    beam_size=beam_size,
                     language=language,
                     initial_prompt=initial_prompt_val,
                     vad_filter=use_vad,
