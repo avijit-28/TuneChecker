@@ -279,7 +279,7 @@ export const UploadPage: React.FC = () => {
         <ShieldCheck size={20} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
         <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', lineHeight: 1.5 }}>
           <strong>Zero-Cost & Local Privacy Guarantee:</strong> Audio processing is executed 100% locally on your machine
-          using Faster-Whisper and local Ollama models. No audio or transcript data is transmitted to external cloud providers.
+          using automated speech and 2-layer voice-tone processing. No audio or transcript data is shared publicly.
         </div>
       </div>
     </div>

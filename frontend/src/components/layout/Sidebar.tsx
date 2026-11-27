@@ -108,8 +108,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose }) => {
           color: 'var(--color-text-tertiary)'
         }}
       >
-        <div>Local Zero-Cost Mode</div>
-        <div style={{ fontSize: '11px', color: 'var(--color-text-disabled)' }}>Faster-Whisper • Ollama</div>
+        <div>Sales Call Auditor</div>
+        <div style={{ fontSize: '11px', color: 'var(--color-text-disabled)' }}>2-Layer Tone & Voice Analytics</div>
       </div>
     </aside>
   );

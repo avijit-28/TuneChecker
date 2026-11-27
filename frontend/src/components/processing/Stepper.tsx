@@ -28,7 +28,7 @@ interface StepperProps {
 
 const STAGE_TITLES: Record<string, string> = {
   validation: '1. Audio Validation & Format Verification',
-  transcription: '2. Faster-Whisper Transcription',
+  transcription: '2. Speech-to-Text Transcription',
   speaker_identification: '3. Speaker Identification & Role Attribution',
   tone_analysis: '4. Sales Representative Tone Analysis',
   evidence_extraction: '5. Verbatim Evidence Verification',
@@ -38,7 +38,7 @@ const STAGE_TITLES: Record<string, string> = {
 
 const STAGE_DESCRIPTIONS: Record<string, string> = {
   validation: 'Validating container format, duration limits, and normalizing to lossless 16kHz mono PCM.',
-  transcription: 'Decoding speech to text using Faster-Whisper ASR with native Hinglish/Hindi support.',
+  transcription: 'Decoding speech to text with native Hinglish/Hindi support.',
   speaker_identification: 'Diarizing speech turns and classifying Sales Representative vs Customer roles.',
   tone_analysis: '2-layer evaluation: Voice Acoustics (volume spike, pitch F0, sharpness) + Text intent.',
   evidence_extraction: 'Matching exact transcript quote spans and verifying severity thresholds.',

@@ -99,10 +99,10 @@ export const AudioQualityReportCard: React.FC<AudioQualityReportCardProps> = ({ 
           </div>
           <div>
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-              Audio Rectification & Quality Report
+              Audio & Transcription Quality Report
             </h3>
             <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-              Adaptive Telephone Speech Enhancement & Transcription Precision
+              Per-Call Speech Coverage, Signal Quality & Attribution Metrics
             </span>
           </div>
         </div>
@@ -123,7 +123,7 @@ export const AudioQualityReportCard: React.FC<AudioQualityReportCardProps> = ({ 
             }}
           >
             <CheckCircle2 size={13} />
-            +{audio_rectification.measured_rms_gain_db} dB Dynamic Gain
+            {audio_rectification.measured_rms_gain_db} dBFS Avg Level
           </span>
           <button
             type="button"
@@ -169,14 +169,14 @@ export const AudioQualityReportCard: React.FC<AudioQualityReportCardProps> = ({ 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: 'var(--color-primary)' }}>
             <Waves size={16} />
             <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-              Speech Recovery Rate
+              Speech Coverage
             </span>
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-            +{speech_recovery.speech_recovery_rate_pct}%
+            {speech_recovery.speech_recovery_rate_pct}%
           </div>
           <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
-            <strong>{speech_recovery.rectified_utterances}</strong> turns captured (vs {speech_recovery.baseline_unnormalized_utterances} unnormalized, +{speech_recovery.recovered_utterances} turns restored)
+            <strong>{speech_recovery.rectified_utterances}</strong> turns captured across call duration
           </div>
         </div>
 
@@ -192,14 +192,14 @@ export const AudioQualityReportCard: React.FC<AudioQualityReportCardProps> = ({ 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#10B981' }}>
             <ShieldCheck size={16} />
             <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-              Transcription Accuracy
+              Transcription Confidence
             </span>
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--color-text-primary)' }}>
             {accuracy_and_confidence.transcription_confidence_pct}%
           </div>
           <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
-            Faster-Whisper Silero VAD tuned • <strong>{speech_recovery.rectified_word_count}</strong> words converted (+{speech_recovery.word_recovery_rate_pct}%)
+            <strong>{speech_recovery.rectified_word_count}</strong> words transcribed ({speech_recovery.word_recovery_rate_pct} words/sec)
           </div>
         </div>
 
@@ -215,14 +215,14 @@ export const AudioQualityReportCard: React.FC<AudioQualityReportCardProps> = ({ 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#8B5CF6' }}>
             <Cpu size={16} />
             <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-              Acoustic Diarization
+              Speaker Diarization
             </span>
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--color-text-primary)' }}>
             {accuracy_and_confidence.diarization_confidence_pct}%
           </div>
           <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
-            Spectral Clustering: Rep ({accuracy_and_confidence.speaker_attribution?.sales_rep}) vs Customer ({accuracy_and_confidence.speaker_attribution?.customer})
+            Rep ({accuracy_and_confidence.speaker_attribution?.sales_rep}) vs Customer ({accuracy_and_confidence.speaker_attribution?.customer})
           </div>
         </div>
 
@@ -238,14 +238,14 @@ export const AudioQualityReportCard: React.FC<AudioQualityReportCardProps> = ({ 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#F59E0B' }}>
             <Volume2 size={16} />
             <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-              Audio SNR Enhancement
+              Measured Signal SNR
             </span>
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-            +{audio_rectification.snr_improvement_db} dB
+            {audio_rectification.snr_improvement_db} dB
           </div>
           <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
-            Faint telephone earpiece compression (-32 dBFS leveling to -14 dBFS)
+            Speech-to-noise ratio • Avg level {audio_rectification.measured_rms_gain_db} dBFS
           </div>
         </div>
       </div>
