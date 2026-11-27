@@ -32,84 +32,110 @@
 
 ## 2. High-Level Architecture (Graph View)
 
+TuneChecker ka end-to-end architecture 5 major layers me horizontally structured hai — Client se lekar AI Engines tak:
+
 ```mermaid
-graph TB
-    subgraph Client ["Client Layer (Browser / Mobile)"]
-        UI["React 18 + Vite SPA<br/>(Tailwind + Dark Indigo Glassmorphism)"]
-        Mic["Live Microphone Recorder<br/>(MediaRecorder API -> 16kHz WebM)"]
-        FileUploader["Audio Drag & Drop Uploader<br/>(.m4a, .mp3, .wav, .mpeg, .ogg, .flac)"]
-        AudioPlayer["Waveform Player & Live Log Feed"]
+flowchart LR
+    subgraph Client ["1. Client Layer (Browser & Mobile)"]
+        direction TB
+        UI["💻 React 18 + Vite SPA<br/>Glassmorphic Dark Indigo UI"]
+        Mic["🎙️ Live Microphone Input<br/>16kHz WebM MediaRecorder"]
+        Upload["📁 Audio File Uploader<br/>.m4a, .mp3, .wav, .mpeg, .ogg, .flac"]
+        Player["🔊 Waveform Audio Player<br/>Speed Control & Live Logs"]
+        Mic --> Upload --> UI
+        UI -.-> Player
     end
 
-    subgraph Hosting ["Frontend Deployment"]
-        Vercel["Vercel Edge Network<br/>https://tune-checker.vercel.app"]
-        VercelProxy["Vercel API Proxy<br/>(/api/* -> Hugging Face Space)"]
+    subgraph Gateway ["2. Gateway & Edge CDN"]
+        direction TB
+        Vercel["⚡ Vercel Edge Network<br/>https://tune-checker.vercel.app"]
+        Proxy["🔄 /api/* Proxy Rewrite<br/>Seamless Zero-CORS Routing"]
+        Vercel --> Proxy
     end
 
-    subgraph BackendGateway ["API & Service Layer"]
-        FastAPI["FastAPI App (Python 3.12)<br/>Async Endpoints + CORS + SSE"]
-        SQLite[("SQLite 3 DB<br/>WAL Mode + Foreign Keys")]
-        AudioStorage[("Normalized WAV Storage<br/>16kHz Mono Lossless PCM")]
+    subgraph BackendGateway ["3. Backend Core (FastAPI)"]
+        direction TB
+        FastAPI["🚀 FastAPI App (Python 3.12)<br/>Async REST Endpoints & SSE"]
+        DB[("🗄️ SQLite 3 Database<br/>WAL Mode + SQL Triggers")]
+        Storage[("🎧 Audio WAV Storage<br/>16kHz Mono Lossless PCM")]
+        FastAPI <--> DB
+        FastAPI <--> Storage
     end
 
-    subgraph ProcessingPipeline ["7-Stage Analysis Pipeline"]
-        S1["Stage 1: Audio Validation"]
-        S2["Stage 2: Hinglish ASR (Faster-Whisper)"]
-        S3["Stage 3: Speaker Diarization & Role Attribution"]
-        S4["Stage 4: 2-Layer Tone Analysis (Acoustics + SER + LLM)"]
-        S5["Stage 5: Verbatim Quote Verification"]
-        S6["Stage 6: Action Item & Follow-up Tracking"]
-        S7["Stage 7: Final Audit Report & Dynamic Metrics"]
+    subgraph PipelineRunner ["4. 7-Stage Pipeline Orchestrator"]
+        direction TB
+        Orch["⚙️ Orchestrator State Machine<br/>Sequential Stage Transitions"]
+        StateLog["📋 StageRun & Activity Feeds<br/>Per-stage duration & Live Logs"]
+        Orch --> StateLog
     end
 
-    subgraph AIModels ["AI Inference Engines"]
-        FW["Faster-Whisper (Systran/base)<br/>ZeroGPU CUDA beam=5 / CPU int8"]
-        SER["Speech Emotion Recognition<br/>(superb/wav2vec2-base-superb-er)"]
-        Acoustics["Prosody Analyzer<br/>(RMS dBFS, Pitch F0, ZCR)"]
-        Gemini["Google Gemini 2.5 Flash<br/>(Structured JSON Output)"]
+    subgraph AIModels ["5. AI Inference Layer (ZeroGPU / Local)"]
+        direction TB
+        FW["🗣️ Faster-Whisper ASR<br/>CUDA Float16 (HF) / CPU int8 (Local)"]
+        Acoustics["📊 Acoustic Prosody Analyzer<br/>RMS dBFS Spikes, Pitch F0, ZCR"]
+        SER["🧠 Wav2Vec2 SER Transformer<br/>superb/wav2vec2-base-superb-er"]
+        Gemini["🤖 Google Gemini 2.5 Flash<br/>Rep-Only Tone & Commitment JSON"]
     end
 
-    Mic --> FileUploader
-    FileUploader --> UI
-    UI --> Vercel
-    Vercel --> VercelProxy
-    VercelProxy --> FastAPI
-    FastAPI --> SQLite
-    FastAPI --> AudioStorage
-    FastAPI --> ProcessingPipeline
-    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
-    S2 -.-> FW
-    S4 -.-> Acoustics
-    S4 -.-> SER
-    S4 -.-> Gemini
-    S6 -.-> Gemini
-    S7 --> SQLite
-    SQLite --> UI
-    AudioPlayer -.-> AudioStorage
+    Client ==> Gateway
+    Gateway ==> BackendGateway
+    BackendGateway ==> PipelineRunner
+    PipelineRunner <==> AIModels
 ```
 
 ---
 
 ## 3. 7-Stage Processing Pipeline (Kaise Kaam Karta Hai?)
 
-Har call upload hone ke baad ek sequential 7-stage state machine me process hoti hai:
+Har call upload hone ke baad 4 continuous phases aur 7 sequential stages me **Left-to-Right** execute hoti hai:
 
 ```mermaid
-flowchart TD
-    A["Uploaded Audio / Live Mic"] --> S1["Stage 1: Audio Validation & Format Verification"]
-    S1 -->|"Verify MIME, header bytes, duration (10s-30m)<br/>Lossless 16kHz mono PCM conversion"| S2["Stage 2: Speech-to-Text Transcription"]
-    
-    S2 -->|"ZeroGPU CUDA / CPU int8 Faster-Whisper<br/>Native Hindi decoding + Roman Hinglish transliteration<br/>Silero VAD fallback for silent dropouts"| S3["Stage 3: Speaker Diarization & Role Attribution"]
-    
-    S3 -->|"Cluster speech segments by voice timbre & pitch<br/>Assign roles: Sales Representative vs Customer"| S4["Stage 4: Sales Representative Tone Analysis"]
-    
-    S4 -->|"Layer 1: Voice Acoustics (dBFS RMS spike, Pitch F0, ZCR)<br/>Layer 1.5: wav2vec2 Speech Emotion Recognition<br/>Layer 2: LLM Context-Aware Prompting (Rep Only)"| S5["Stage 5: Verbatim Evidence Verification"]
-    
-    S5 -->|"Fuzzy string matching against transcript<br/>Verify start_sec / end_sec boundaries<br/>Discard hallucinations"| S6["Stage 6: Action Item & Follow-up Tracking"]
-    
-    S6 -->|"Extract commitments, deadlines, modalities<br/>Assign owner: Sales Rep vs Customer"| S7["Stage 7: Finalizing Call Audit Report"]
-    
-    S7 -->|"Compute dynamic SNR, speech coverage %, confidence<br/>Record total elapsed analysis time<br/>Save finalized Audit Report to Database"| Complete["✅ Audit Complete (Viewable on Dashboard)"]
+flowchart LR
+    subgraph Phase1 ["Phase 1: Ingestion & Normalization"]
+        direction TB
+        In(["📥 Audio Upload<br/>or Live Mic"])
+        S1["<b>Stage 1: Validation & Format Check</b><br/>• Strict audio validation (rejection of video)<br/>• FFmpeg lossless 16kHz mono PCM conversion"]
+        In --> S1
+    end
+
+    subgraph Phase2 ["Phase 2: Speech-to-Text & Diarization"]
+        direction TB
+        S2["<b>Stage 2: Hinglish Transcription</b><br/>• Faster-Whisper ASR (CUDA beam=5 / CPU)<br/>• Native Hindi decoding + Roman transliteration<br/>• Silero VAD fallback for silent dropouts"]
+        S3["<b>Stage 3: Diarization & Role Tagging</b><br/>• Vocal timbre & pitch clustering<br/>• Sales Representative vs Customer attribution"]
+        S2 --> S3
+    end
+
+    subgraph Phase3 ["Phase 3: 2-Layer Intelligence & Safeguards"]
+        direction TB
+        S4["<b>Stage 4: 2-Layer Tone Analysis</b><br/>• Layer 1: RMS volume spike, pitch F0, ZCR<br/>• Layer 1.5: wav2vec2 Speech Emotion model<br/>• Layer 2: LLM (Rep-Only Protection Invariant)"]
+        S5["<b>Stage 5: Verbatim Quote Verification</b><br/>• Fuzzy character span matching on transcript<br/>• Zero model hallucinations tolerated"]
+        S4 --> S5
+    end
+
+    subgraph Phase4 ["Phase 4: Commitments & Report Compilation"]
+        direction TB
+        S6["<b>Stage 6: Action Item Tracking</b><br/>• Extract promised deliverables & follow-ups<br/>• Map owners, dates, and communication channel"]
+        S7["<b>Stage 7: Finalizing Audit Report</b><br/>• Dynamic per-call SNR & confidence metrics<br/>• Analysis processing duration counter"]
+        Out(["📊 <b>Audit Report Published</b><br/>Instant view on Dashboard & History"])
+        S6 --> S7 --> Out
+    end
+
+    Phase1 ==> Phase2
+    Phase2 ==> Phase3
+    Phase3 ==> Phase4
+```
+
+### Linear 7-Stage Execution Flow:
+```mermaid
+flowchart LR
+    In(["🎙️ Audio Input"]) --> S1["1. Validation<br/>(16kHz WAV)"]
+    S1 --> S2["2. Hinglish ASR<br/>(Faster-Whisper)"]
+    S2 --> S3["3. Diarization<br/>(Rep vs Customer)"]
+    S3 --> S4["4. 2-Layer Tone<br/>(Acoustics + LLM)"]
+    S4 --> S5["5. Verification<br/>(Verbatim Quotes)"]
+    S5 --> S6["6. Action Items<br/>(Commitments)"]
+    S6 --> S7["7. Final Report<br/>(Metrics & Time)"]
+    S7 --> Done(["✅ Complete<br/>Dashboard Ready"])
 ```
 
 ### Detailed Stage Breakdown:
