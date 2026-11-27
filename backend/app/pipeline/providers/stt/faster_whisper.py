@@ -11,6 +11,60 @@ from app.utils.errors import AppError
 
 logger = logging.getLogger("tunechecker.stt.faster_whisper")
 
+_DEVANAGARI_VOWELS = {
+    "अ": "a", "आ": "aa", "इ": "i", "ई": "ee", "उ": "u", "ऊ": "oo",
+    "ऋ": "ri", "ए": "e", "ऐ": "ai", "ओ": "o", "औ": "au",
+}
+_DEVANAGARI_MATRAS = {
+    "ा": "a", "ि": "i", "ी": "ee", "ु": "u", "ू": "oo",
+    "ृ": "ri", "े": "e", "ै": "ai", "ो": "o", "ौ": "au",
+    "ं": "n", "ँ": "n", "ः": "h", "्": "",
+}
+_DEVANAGARI_CONSONANTS = {
+    "क": "k", "ख": "kh", "ग": "g", "घ": "gh", "ङ": "ng",
+    "च": "ch", "छ": "chh", "ज": "j", "झ": "jh", "ञ": "ny",
+    "ट": "t", "ठ": "th", "ड": "d", "ढ": "dh", "ण": "n",
+    "त": "t", "थ": "th", "द": "d", "ध": "dh", "न": "n",
+    "प": "p", "फ": "ph", "ब": "b", "भ": "bh", "म": "m",
+    "य": "y", "र": "r", "ल": "l", "व": "v", "श": "sh",
+    "ष": "sh", "स": "s", "ह": "h", "क़": "q", "ख़": "kh",
+    "ग़": "gh", "ज़": "z", "ड़": "d", "ढ़": "dh", "फ़": "f",
+}
+_DEVANAGARI_DIGITS = str.maketrans("०१२३४५६७८९।", "0123456789.")
+
+
+def devanagari_to_roman(text: str) -> str:
+    """Lightweight deterministic Devanagari-to-Roman Hinglish transliterator."""
+    if not text or not any("\u0900" <= ch <= "\u097F" for ch in text):
+        return text
+    text = text.translate(_DEVANAGARI_DIGITS)
+    out: list[str] = []
+    n = len(text)
+    i = 0
+    while i < n:
+        ch = text[i]
+        # Handle nukta digraphs (consonant + \u093c)
+        if i + 1 < n and text[i + 1] == "\u093c" and (ch + "\u093c") in _DEVANAGARI_CONSONANTS:
+            ch = ch + "\u093c"
+            i += 1
+        if ch in _DEVANAGARI_CONSONANTS:
+            out.append(_DEVANAGARI_CONSONANTS[ch])
+            nxt = text[i + 1] if i + 1 < n else ""
+            if nxt in _DEVANAGARI_MATRAS:
+                out.append(_DEVANAGARI_MATRAS[nxt])
+                i += 1
+            elif nxt and (nxt in _DEVANAGARI_CONSONANTS or nxt in _DEVANAGARI_VOWELS):
+                # Schwa retention inside word; word-final consonant drops implicit 'a'
+                out.append("a")
+        elif ch in _DEVANAGARI_VOWELS:
+            out.append(_DEVANAGARI_VOWELS[ch])
+        elif ch in _DEVANAGARI_MATRAS:
+            out.append(_DEVANAGARI_MATRAS[ch])
+        else:
+            out.append(ch)
+        i += 1
+    return "".join(out)
+
 class FasterWhisperProvider(BaseSttProvider):
     _model_instance: Optional[WhisperModel] = None
 
@@ -62,10 +116,12 @@ class FasterWhisperProvider(BaseSttProvider):
             # Select language and prompt based on WHISPER_LANGUAGE_MODE
             mode = getattr(settings, "WHISPER_LANGUAGE_MODE", "hinglish").lower()
             if mode == "hinglish":
-                lang_param = "en"
+                # Decode with Whisper's native Hindi+English code-switching ('hi') to avoid English hallucinations,
+                # then transliterate Devanagari output to Roman Hinglish.
+                lang_param = "hi"
                 initial_prompt_val = (
-                    "Yeh customer sales and support call Hindi aur Hinglish me hai. Roman script me verbatim Hinglish me transcribe karo: "
-                    "Haan, boliye, product details, pricing, discount, refund policy, billing, subscription, agreement, follow up, order details."
+                    "यह ग्राहक बिक्री और सहायता कॉल हिंदी और हिंग्लिश में है। "
+                    "Haan, boliye, product details, pricing, discount, order details, kaju, kishmish, kilo."
                 )
             elif mode == "hindi":
                 lang_param = "hi"
@@ -134,6 +190,12 @@ class FasterWhisperProvider(BaseSttProvider):
 
             if not stt_segments:
                 raise AppError("STT_EMPTY_TRANSCRIPT", "Transcription returned empty result.", 422)
+
+            if mode == "hinglish":
+                for seg in stt_segments:
+                    seg.text = devanagari_to_roman(seg.text)
+                    for w in seg.words:
+                        w.word = devanagari_to_roman(w.word)
 
             raw_dict = {
                 "language": info.language,
