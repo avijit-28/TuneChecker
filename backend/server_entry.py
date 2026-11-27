@@ -43,15 +43,20 @@ with gr.Blocks(title="TuneChecker API") as demo:
 
 
 if __name__ == "__main__":
-    # Let Gradio bind the exact port expected by Hugging Face ZeroGPU
-    demo.launch(server_name="0.0.0.0", prevent_thread_lock=True)
+    # Let Gradio bind the exact port expected by Hugging Face ZeroGPU (ssr_mode=False so Python serves /api/v1 directly)
+    demo.launch(server_name="0.0.0.0", ssr_mode=False, prevent_thread_lock=True)
 
     # Attach TuneChecker FastAPI routes & handlers directly to Gradio's FastAPI app
+    # Prepend our /api/v1 routes BEFORE Gradio's catch-all UI routes
     fastapi_app = demo.app
     fastapi_app.add_exception_handler(AppError, app_error_handler)
     fastapi_app.add_exception_handler(RequestValidationError, validation_error_handler)
     fastapi_app.add_exception_handler(StarletteHTTPException, http_error_handler)
     fastapi_app.add_exception_handler(Exception, generic_error_handler)
+
+    existing_count = len(fastapi_app.router.routes)
     fastapi_app.include_router(api_router, prefix="/api/v1")
+    new_routes = fastapi_app.router.routes[existing_count:]
+    fastapi_app.router.routes[:] = new_routes + fastapi_app.router.routes[:existing_count]
 
     threading.Event().wait()
