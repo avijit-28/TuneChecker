@@ -12,7 +12,6 @@ os.environ.setdefault("WHISPER_BEAM_SIZE", "1")
 os.environ.setdefault("CORS_ORIGINS", "*")
 
 import create_tables  # noqa: E402, F401
-from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.exceptions import RequestValidationError  # noqa: E402
 from starlette.exceptions import HTTPException as StarletteHTTPException  # noqa: E402
 from app.api.v1.router import api_router  # noqa: E402
@@ -49,14 +48,6 @@ if __name__ == "__main__":
 
     # Attach TuneChecker FastAPI routes & handlers directly to Gradio's FastAPI app
     fastapi_app = demo.app
-    fastapi_app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-        expose_headers=["X-Request-ID"],
-    )
     fastapi_app.add_exception_handler(AppError, app_error_handler)
     fastapi_app.add_exception_handler(RequestValidationError, validation_error_handler)
     fastapi_app.add_exception_handler(StarletteHTTPException, http_error_handler)
