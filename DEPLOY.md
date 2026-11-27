@@ -1,23 +1,24 @@
 # TuneChecker — All-Time Free Deployment Guide
 
 This setup runs **100% free forever** with zero credit card required:
-- **Backend**: **Hugging Face Spaces (Docker Space, 16 GB RAM Free)** running FastAPI + FFmpeg + Faster-Whisper + 2-Layer Voice Acoustics + Gemini LLM
+- **Backend**: **Hugging Face Spaces (Gradio SDK · Blank · CPU Basic Free, 16 GB RAM)** running FastAPI + FFmpeg (`packages.txt`) + Faster-Whisper + 2-Layer Voice Acoustics + Gemini LLM
 - **Frontend**: **Vercel (Free Hobby Plan)** serving the React/Vite app and proxying `/api/*` requests to your HF Space
 
 ---
 
 ## Step 1: Deploy Backend on Hugging Face Spaces (Free 16 GB RAM)
 
-1. Create a free account at https://huggingface.co and click **New Space**.
+1. Create a free account at https://huggingface.co/new-space.
 2. Set:
    - **Space name**: `tunechecker-api`
    - **License**: `mit`
-   - **Select Space SDK**: **Docker** → **Blank**
-   - **Space hardware**: **CPU basic · 2 vCPU · 16 GB (Free)**
-3. Clone your new Space repo and copy the contents of `backend/` into it (or push `backend/` directly to the Space's git remote):
+   - **Select the Space SDK**: **Gradio** → **Blank** (Docker is paid on new Spaces; Gradio SDK is **Free** and runs our FastAPI `app.py` + `packages.txt` seamlessly!)
+   - **Space hardware**: **CPU Basic** (Free 16 GB RAM)
+   - **Visibility**: **Public** (Free)
+3. Clone your new Space repo and copy the contents of `backend/` into it:
    ```bash
    git clone https://huggingface.co/spaces/<YOUR_HF_USERNAME>/tunechecker-api
-   cp -r backend/* backend/.dockerignore tunechecker-api/
+   cp -r backend/* tunechecker-api/
    cd tunechecker-api
    git add .
    git commit -m "Deploy TuneChecker backend"
