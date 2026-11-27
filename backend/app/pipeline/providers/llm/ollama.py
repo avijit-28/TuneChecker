@@ -22,6 +22,10 @@ class OllamaLlmProvider(BaseLlmProvider):
         return None
 
     def generate_json(self, system_prompt: str, user_prompt: str) -> dict[str, Any]:
+        if getattr(settings, "LLM_PROVIDER", "ollama").lower() == "gemini":
+            from app.pipeline.providers.llm.gemini import GeminiLlmProvider
+            return GeminiLlmProvider().generate_json(system_prompt, user_prompt)
+
         payload = {
             "model": self.model,
             "messages": [
