@@ -1,7 +1,7 @@
 import os
 import uvicorn
 
-# Configure cloud defaults for Hugging Face Spaces (Gradio SDK, Free CPU Basic)
+# Configure cloud defaults for Hugging Face Spaces (Gradio SDK, Free)
 os.environ.setdefault("LLM_PROVIDER", "gemini")
 os.environ.setdefault("LLM_FALLBACK_PROVIDER", "gemini")
 os.environ.setdefault("WHISPER_MODEL", "large-v3-turbo")
