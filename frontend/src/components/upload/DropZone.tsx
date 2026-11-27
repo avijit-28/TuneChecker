@@ -34,10 +34,14 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileSelect, disabled }) =>
 
   const validateAndSelect = (file: File) => {
     setError(null);
-    const validExts = ['.m4a', '.mp4', '.mp3', '.wav', '.mpeg', '.mpg', '.mpga', '.webm'];
+    if (file.type && file.type.toLowerCase().startsWith('video/')) {
+      setError('Video files are not supported. Please upload an audio file or record via live microphone.');
+      return;
+    }
+    const validExts = ['.m4a', '.mp3', '.wav', '.mpeg', '.mpg', '.mpga', '.webm', '.ogg', '.aac', '.flac'];
     const lowerName = file.name.toLowerCase();
     if (!validExts.some((ext) => lowerName.endsWith(ext))) {
-      setError('Only .m4a, .mp4, .mp3, .wav, .webm, and .mpeg/.mpg audio recordings are accepted.');
+      setError('Only audio files (.m4a, .mp3, .wav, .mpeg, .ogg, .aac, .flac, .webm) or live mic recordings are accepted.');
       return;
     }
     const maxMb = 50;
@@ -156,7 +160,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileSelect, disabled }) =>
           }}
         >
           <UploadCloud size={16} />
-          Upload Audio/Video File
+          Upload Audio File
         </button>
 
         <button
@@ -188,7 +192,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileSelect, disabled }) =>
         <div
           role="button"
           tabIndex={disabled ? -1 : 0}
-          aria-label="Upload call recording: drop .m4a, .mp4, .mp3, .wav, or .mpeg file or press Enter to browse"
+          aria-label="Upload audio recording: drop .m4a, .mp3, .wav, .mpeg, or .ogg file or press Enter to browse"
           onClick={() => !disabled && inputRef.current?.click()}
           onKeyDown={(e) => {
             if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
@@ -224,7 +228,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileSelect, disabled }) =>
           <input
             type="file"
             ref={inputRef}
-            accept=".m4a,.mp4,.mp3,.wav,.mpeg,.mpg,.mpga,.webm,audio/mp4,video/mp4,audio/mpeg,audio/wav,video/mpeg,audio/x-m4a,audio/webm,video/webm"
+            accept=".m4a,.mp3,.wav,.mpeg,.mpg,.mpga,.ogg,.aac,.flac,.webm,audio/*"
             style={{ display: 'none' }}
             onChange={(e) => {
               if (e.target.files && e.target.files.length > 0) {
@@ -253,11 +257,11 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileSelect, disabled }) =>
           </div>
 
           <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-            Drop your call recording here (.mp4, .m4a, .mp3, .wav, .webm), or{' '}
+            Drop your audio recording here (.m4a, .mp3, .wav, .mpeg), or{' '}
             <span style={{ color: 'var(--color-primary)', textDecoration: 'underline' }}>browse</span>
           </div>
           <div style={{ fontSize: '13px', color: 'var(--color-text-tertiary)', marginTop: '6px' }}>
-            .mp4, .m4a, .mp3, .wav, .mpeg, .webm • 10 seconds to 30 minutes • Up to 50 MB
+            Audio files only (.m4a, .mp3, .wav, .mpeg, .ogg, .aac, .flac) • 10 seconds to 30 minutes • Up to 50 MB
           </div>
         </div>
       ) : (

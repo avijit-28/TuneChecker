@@ -2,10 +2,9 @@ from pathlib import Path
 from app.utils.errors import AppError
 from app.config import settings
 
-VALID_EXTENSIONS = {".m4a", ".mp4", ".mp3", ".wav", ".mpeg", ".mpg", ".mpga", ".webm"}
+VALID_EXTENSIONS = {".m4a", ".mp3", ".wav", ".mpeg", ".mpg", ".mpga", ".webm", ".ogg", ".aac", ".flac"}
 VALID_MIME_TYPES = {
     "audio/mp4",
-    "video/mp4",
     "audio/x-m4a",
     "audio/m4a",
     "audio/mpeg",
@@ -14,22 +13,31 @@ VALID_MIME_TYPES = {
     "audio/wav",
     "audio/x-wav",
     "audio/wave",
-    "video/mpeg",
     "audio/webm",
-    "video/webm",
+    "audio/ogg",
+    "audio/aac",
+    "audio/flac",
     "application/octet-stream"
 }
 
 def validate_filename_and_mime(filename: str, content_type: str) -> str:
     if not filename:
         raise AppError("FILE_EMPTY", "No file uploaded.", 422)
+
+    if content_type and content_type.lower().startswith("video/"):
+        raise AppError(
+            "INVALID_FILE_TYPE",
+            "Video files are not supported. Please upload an audio file or record via live microphone.",
+            415,
+            details={"filename": filename, "content_type": content_type}
+        )
     
     # Check extension
     lower_name = filename.lower()
     if not any(lower_name.endswith(ext) for ext in VALID_EXTENSIONS):
         raise AppError(
             "INVALID_FILE_TYPE",
-            f"Unsupported file extension. Supported formats: .m4a, .mp4, .mp3, .wav, .mpeg, .mpg.",
+            "Unsupported file extension. Only audio files (.m4a, .mp3, .wav, .mpeg, .ogg, .aac, .flac) or live mic recordings (.webm) are supported.",
             415,
             details={"filename": filename, "supported": sorted(list(VALID_EXTENSIONS))}
         )
@@ -52,10 +60,16 @@ def validate_audio_container(header_bytes: bytes, filename: str) -> bool:
         return False
     
     ext = Path(filename).suffix.lower()
-    if ext in (".m4a", ".mp4"):
+    if ext == ".m4a":
         return validate_ftyp_box(header_bytes)
     elif ext == ".webm":
         return len(header_bytes) >= 4 and header_bytes[:4] == b"\x1a\x45\xdf\xa3"
+    elif ext == ".ogg":
+        return len(header_bytes) >= 4 and header_bytes[:4] == b"OggS"
+    elif ext == ".flac":
+        return len(header_bytes) >= 4 and header_bytes[:4] == b"fLaC"
+    elif ext == ".aac":
+        return len(header_bytes) >= 2 and header_bytes[0] == 0xFF and (header_bytes[1] & 0xF0) == 0xF0
     elif ext == ".wav":
         if len(header_bytes) < 12:
             return False

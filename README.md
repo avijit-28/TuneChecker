@@ -1,6 +1,9 @@
-# Sales Call Quality Analysis Agent
+# Sales Call Quality Analysis Agent (TuneChecker)
 
-A web-based AI application for the **ScaleWorks AI Forward Deployed Engineer** assessment. A sales manager uploads an `.m4a` call recording and receives a transcript, a RED/GREEN verdict on the **sales representative's** tone with verbatim evidence, and a list of concrete action items.
+> 📘 **[👉 Click here to read the Complete System Architecture & Working Guide (SYSTEM_ARCHITECTURE.md)](./SYSTEM_ARCHITECTURE.md)**  
+> *Contains detailed Mermaid architecture flowcharts, 2-layer acoustic+LLM tone detection explanation, tech stack details, and component breakdown.*
+
+A web-based AI application for the **ScaleWorks AI Forward Deployed Engineer** assessment. A sales manager uploads an audio call recording and receives a transcript, a RED/GREEN verdict on the **sales representative's** tone with verbatim evidence, and a list of concrete action items.
 
 > ## ✅ Project Status: 100% Implemented & Verified
 >
